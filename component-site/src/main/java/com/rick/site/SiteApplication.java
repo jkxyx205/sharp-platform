@@ -1,5 +1,6 @@
 package com.rick.site;
 
+import com.rick.common.component.starter.config.ComponentConfig;
 import com.rick.fileupload.client.controller.DocumentController;
 import com.rick.fileupload.client.support.DocumentDAO;
 import com.rick.fileupload.client.support.DocumentServiceImpl;
@@ -8,9 +9,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 
-@SpringBootApplication(scanBasePackages = {"com.rick.site", "com.rick.common.component.starter.config"})
+@SpringBootApplication
 @DependsOn("entityDAOSupport")
-@Import({DocumentDAO.class, DocumentServiceImpl.class, DocumentController.class})
+@Import({DocumentDAO.class, DocumentServiceImpl.class, DocumentController.class, ComponentConfig.class})
 public class SiteApplication {
 
     public static void main(String[] args) {
