@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @ToString
 public enum ExceptionCodeEnum implements ExceptionCode {
-    SITE_EXPIRED(7001001, "网站已经过期！");
+    ERP_EXPIRED(7001001, "ERP已经过期！");
 
     private int code;
     private String message;

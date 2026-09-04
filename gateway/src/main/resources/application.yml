@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        # Web 实例单独分组，与 Dubbo 注册的实例（DEFAULT_GROUP）隔离
+        group: WEB_GROUP
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: site
+              uri: lb://site
+              predicates:
+                - Path=/api/site/**
+              filters:
+                - StripPrefix=2
+            - id: erp
+              uri: lb://erp
+              predicates:
+                - Path=/api/erp/**
+              filters:
+                - StripPrefix=2
+server:
+  port: 8769
+
+dubbo:
+  registry:
+    address: nacos://127.0.0.1:8848
+    register-mode: instance
+  application:
+    # 网关无 Dubbo 服务可导出，纯消费者也需注册实例
+    register-consumer: true
+    qos-port: 22224

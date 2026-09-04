@@ -1,4 +1,4 @@
-group = 'com.rick.component-api'
+group = 'com.rick.api'
 version = libs.versions.sharp.get()
 description = 'component-api'
 

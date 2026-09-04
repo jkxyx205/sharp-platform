@@ -1,6 +1,7 @@
 package com.rick.erp;
 
 import com.rick.common.component.starter.config.ComponentConfig;
+import com.rick.common.component.starter.config.WebMvcRegistrationsConfig;
 import com.rick.fileupload.client.controller.DocumentController;
 import com.rick.fileupload.client.support.DocumentDAO;
 import com.rick.fileupload.client.support.DocumentServiceImpl;
@@ -12,7 +13,8 @@ import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
 @DependsOn("entityDAOSupport")
-@Import({DocumentDAO.class, DocumentServiceImpl.class, DocumentController.class, ComponentConfig.class})
+@Import({DocumentDAO.class, DocumentServiceImpl.class, DocumentController.class,
+        ComponentConfig.class, WebMvcRegistrationsConfig.class})
 @EnableDubbo
 public class ErpApplication {
 

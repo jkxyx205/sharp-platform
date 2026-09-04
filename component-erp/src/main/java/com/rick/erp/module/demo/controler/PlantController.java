@@ -30,7 +30,7 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
 
     @GetMapping("sites")
     public void getSites() {
-        throw new BizException(ExceptionCodeEnum.SITE_EXPIRED);
+        throw new BizException(ExceptionCodeEnum.ERP_EXPIRED);
     }
 
     @GetMapping("dubbo")

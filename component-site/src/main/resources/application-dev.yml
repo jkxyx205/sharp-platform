@@ -3,6 +3,12 @@ spring:
     url: ${JDBC.URL}
     username: ${JDBC.USERNAME}
     password: ${JDBC.PASSWORD}
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        # Web 实例单独分组，与 Dubbo 注册的实例（DEFAULT_GROUP）隔离
+        group: WEB_GROUP
   hikari:
     # 2核：2 * 2 + 1 = 5，留余量设 10
     maximum-pool-size: 10
@@ -35,8 +41,8 @@ dubbo:
     register-mode: instance
   protocol:
     port: 20880
-  qos:
-    port: 22222
+  application:
+    qos-port: 22222
 
 app:
   domain: http://127.0.0.1:8080

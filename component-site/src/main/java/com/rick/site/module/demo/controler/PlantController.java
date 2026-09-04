@@ -8,6 +8,7 @@ import com.rick.site.module.demo.service.PlantService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,7 +22,8 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
     }
 
     @GetMapping("sites")
-    public void getSites() {
+    public void getSites(@PathVariable String groupId) {
+        System.out.println(groupId);
         throw new BizException(ExceptionCodeEnum.SITE_EXPIRED);
     }
 

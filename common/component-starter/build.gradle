@@ -1,4 +1,4 @@
-group = 'com.rick.component-starter'
+group = 'com.rick.common.component.starter'
 version = libs.versions.sharp.get()
 description = 'component-starter'
 
@@ -28,4 +28,7 @@ dependencies {
     // dubbo
     api 'org.apache.dubbo:dubbo-spring-boot-starter'
     api 'org.apache.dubbo:dubbo-nacos-spring-boot-starter'
+
+    // nacos 服务注册发现（Web 实例，供网关 lb:// 路由；与 Dubbo 实例用 group 隔离）
+    api 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
 }
