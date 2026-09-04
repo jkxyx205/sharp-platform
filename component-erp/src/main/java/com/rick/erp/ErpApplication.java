@@ -1,4 +1,4 @@
-package com.rick.site;
+package com.rick.erp;
 
 import com.rick.common.component.starter.config.ComponentConfig;
 import com.rick.fileupload.client.controller.DocumentController;
@@ -14,10 +14,10 @@ import org.springframework.context.annotation.Import;
 @DependsOn("entityDAOSupport")
 @Import({DocumentDAO.class, DocumentServiceImpl.class, DocumentController.class, ComponentConfig.class})
 @EnableDubbo
-public class SiteApplication {
+public class ErpApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SiteApplication.class, args);
+        SpringApplication.run(ErpApplication.class, args);
     }
 
 }

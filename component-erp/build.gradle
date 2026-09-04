@@ -1,6 +1,6 @@
-group = 'com.rick.site'
+group = 'com.rick.erp'
 version = libs.versions.sharp.get()
-description = 'site'
+description = 'erp'
 
 dependencies {
     implementation project(':component-starter')

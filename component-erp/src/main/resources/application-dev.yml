@@ -15,18 +15,18 @@ spring:
 logging:
   level:
     root: INFO
-    com.devyean.site: DEBUG
+    com.devyean.erp: DEBUG
     com.rick.db.repository: DEBUG
     org:
       springdoc: OFF
 
   file:
-    path: /Users/rick/Space/tmp/site/log
+    path: /Users/rick/Space/tmp/erp/log
 
 fileupload:
-  tmp: /Users/rick/Space/tmp/site/tmp # 下载的临时目录
+  tmp: /Users/rick/Space/tmp/erp/tmp # 下载的临时目录
   local: # cd /Users/rick/Space/tmp/fileupload && http-server -p 7892
-    root-path: /Users/rick/Space/tmp/site/files
+    root-path: /Users/rick/Space/tmp/erp/files
     server-url: http://127.0.0.1:7892/ # 映射到tmp目录
 
 dubbo:
@@ -34,9 +34,9 @@ dubbo:
     address: nacos://127.0.0.1:8848
     register-mode: instance
   protocol:
-    port: 20880
+    port: 20881
   qos:
-    port: 22222
+    port: 22223
 
 app:
   domain: http://127.0.0.1:8080

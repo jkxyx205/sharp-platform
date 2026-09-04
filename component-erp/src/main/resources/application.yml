@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: erp
+  profiles:
+    active: dev
+  config:
+    import:
+      - optional:classpath:.env.postgres.properties
+
+sharp:
+  database:
+    type: PostgreSQL
+    entity-base-package: com.rick.erp.**.entity
+#    track-if-has-update: true
+server:
+  port: 7002

@@ -51,6 +51,7 @@ subprojects {
 //        compileOnly 'org.springframework.boot:spring-boot-starter-aop'
 //        compileOnly 'org.springframework.boot:spring-boot-starter-jdbc'
 //        compileOnly 'jakarta.servlet:jakarta.servlet-api'
+        implementation platform("org.apache.dubbo:dubbo-bom:3.3.0")
 
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

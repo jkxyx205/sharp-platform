@@ -1,0 +1,41 @@
+package com.rick.erp.module.demo.controler;
+
+import com.rick.api.site.DemoService;
+import com.rick.common.component.starter.controller.BaseCodeApi;
+import com.rick.common.http.exception.BizException;
+import com.rick.erp.module.common.exception.ExceptionCodeEnum;
+import com.rick.erp.module.demo.entity.Plant;
+import com.rick.erp.module.demo.service.PlantService;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("plants")
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
+
+    // ❌ Avoid:
+    // @DubboReference
+    // private final DemoService demoService
+    @DubboReference
+    private DemoService demoService;
+
+    public PlantController(PlantService baseService) {
+        super(baseService);
+    }
+
+    @GetMapping("sites")
+    public void getSites() {
+        throw new BizException(ExceptionCodeEnum.SITE_EXPIRED);
+    }
+
+    @GetMapping("dubbo")
+    public String getRemoteData() {
+        return demoService.sayHello("hello");
+    }
+
+}

@@ -1,0 +1,7 @@
+group = 'com.rick.component-api'
+version = libs.versions.sharp.get()
+description = 'component-api'
+
+// 库模块，无主类：禁用 bootJar，使用普通 jar
+bootJar { enabled = false }
+jar { enabled = true }

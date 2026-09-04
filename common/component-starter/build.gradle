@@ -24,4 +24,8 @@ dependencies {
 
     // 添加 openapi
     api 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14'
+
+    // dubbo
+    api 'org.apache.dubbo:dubbo-spring-boot-starter'
+    api 'org.apache.dubbo:dubbo-nacos-spring-boot-starter'
 }
