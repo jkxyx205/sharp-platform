@@ -35,7 +35,7 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/auth/login").permitAll()
+                        .pathMatchers("/auth/login", "/auth/register").permitAll()
                         .anyExchange().authenticated())
                 .addFilterAt(bearerTokenAuthenticationFilter(tokenAuthenticationManager, unauthorizedEntryPoint),
                         SecurityWebFiltersOrder.AUTHENTICATION)

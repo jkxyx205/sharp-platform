@@ -23,6 +23,12 @@ spring:
                 - Path=/api/erp/**
               filters:
                 - StripPrefix=2
+            - id: platform
+              uri: lb://platform
+              predicates:
+                - Path=/api/platform/**
+              filters:
+                - StripPrefix=2
 server:
   port: 8769
 
