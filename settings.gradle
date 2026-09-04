@@ -1,4 +1,4 @@
 rootProject.name = 'sharp-platform'
-include "component-starter", "component-api", "component-site", "component-erp", "gateway"
+include "component-starter", "component-api", "component-site", "component-erp", "gateway", "platform"
 project(":component-starter").projectDir = file("common/component-starter")
 project(":component-api").projectDir = file("common/component-api")

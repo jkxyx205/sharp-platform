@@ -1,0 +1,25 @@
+group = 'com.rick.platform'
+version = libs.versions.sharp.get()
+description = 'platform'
+
+dependencies {
+    api 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-jdbc'
+    api 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 密码加密（仅 crypto 模块，不含 web/config，不触发 Spring Security 自动配置）
+    api 'org.springframework.security:spring-security-crypto'
+
+    api 'com.rick.db:sharp-database:0.0.1-SNAPSHOT'
+    api 'com.rick.meta:sharp-meta:0.0.1-SNAPSHOT'
+    api 'com.rick.formflow:sharp-formflow:0.0.1-SNAPSHOT'
+    api 'com.rick.fileupload:sharp-fileupload:0.0.1-SNAPSHOT'
+    api 'org.postgresql:postgresql'
+
+    // dubbo
+    api 'org.apache.dubbo:dubbo-spring-boot-starter'
+    api 'org.apache.dubbo:dubbo-nacos-spring-boot-starter'
+
+    // nacos 服务注册发现（Web 实例，供网关 lb:// 路由；与 Dubbo 实例用 group 隔离）
+    api 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
+}
