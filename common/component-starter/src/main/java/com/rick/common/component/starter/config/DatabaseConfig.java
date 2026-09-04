@@ -1,5 +1,7 @@
 package com.rick.common.component.starter.config;
 
+import com.rick.common.component.starter.model.User;
+import com.rick.common.component.starter.model.UserContextHolder;
 import com.rick.db.repository.TableDAO;
 import com.rick.db.repository.model.EntityId;
 import com.rick.db.repository.support.InsertUpdateCallback;
@@ -22,15 +24,15 @@ public class DatabaseConfig {
         return new ExtendTableDAOImpl(namedParameterJdbcTemplate) {
             @Override
             public long getUserId() {
-//                User user = UserContextHolder.get();
-//                user = (user == null) ? User.builder().id(1L).build() : user;
-//                return user.getId();
-                return 1L;
+                User user = UserContextHolder.get();
+                return (user == null || user.getId() == null) ? 1L : user.getId();
             }
 
             @Override
             protected void addInsertInfo(Map<String, Object> paramMap) {
-                paramMap.put("groupId", 100L);
+                User user = UserContextHolder.get();
+                long groupId =  (user == null || user.getGroupId() == null) ? 1L : user.getGroupId();
+                paramMap.put("groupId", groupId);
             }
         };
     }

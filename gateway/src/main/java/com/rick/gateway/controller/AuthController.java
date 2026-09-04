@@ -54,10 +54,11 @@ public class AuthController {
                 .onStatus(HttpStatusCode::isError, this::platformError)
                 .bodyToMono(MAP_TYPE)
                 .map(user -> {
-                    // principal 用 mobile（唯一登录标识），TokenStore 记录 token -> mobile
+                    // principal 用 mobile（唯一登录标识），TokenStore 记录 token -> (userId, mobile)
                     String mobile = user.get("mobile") == null
                             ? request.mobile() : String.valueOf(user.get("mobile"));
-                    String token = tokenStore.create(mobile);
+                    Long userId = user.get("id") instanceof Number id ? id.longValue() : null;
+                    String token = tokenStore.create(userId, mobile);
                     Map<String, Object> body = new LinkedHashMap<>();
                     body.put("token", token);
                     body.put("user", user);

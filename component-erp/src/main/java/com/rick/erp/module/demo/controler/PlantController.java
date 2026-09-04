@@ -2,6 +2,8 @@ package com.rick.erp.module.demo.controler;
 
 import com.rick.api.site.DemoService;
 import com.rick.common.component.starter.controller.BaseCodeApi;
+import com.rick.common.component.starter.model.User;
+import com.rick.common.component.starter.model.UserContextHolder;
 import com.rick.common.http.exception.BizException;
 import com.rick.erp.module.common.exception.ExceptionCodeEnum;
 import com.rick.erp.module.demo.entity.Plant;
@@ -29,7 +31,10 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
     }
 
     @GetMapping("sites")
-    public void getSites() {
+    public void getSites(User user) {
+        User user2 = UserContextHolder.get();
+        System.out.println(user);
+        System.out.println(user2);
         throw new BizException(ExceptionCodeEnum.ERP_EXPIRED);
     }
 

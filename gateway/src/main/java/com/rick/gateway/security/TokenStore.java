@@ -13,16 +13,24 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class TokenStore {
 
-    /** token -> username */
-    private final Map<String, String> tokens = new ConcurrentHashMap<>();
+    /** token 绑定的用户信息 */
+    public record UserInfo(Long userId, String mobile) {
+    }
 
-    public String create(String username) {
+    /** token -> UserInfo */
+    private final Map<String, UserInfo> tokens = new ConcurrentHashMap<>();
+
+    public String create(Long userId, String mobile) {
         String token = UUID.randomUUID().toString().replace("-", "");
-        tokens.put(token, username);
+        tokens.put(token, new UserInfo(userId, mobile));
         return token;
     }
 
     public Optional<String> findUsername(String token) {
+        return Optional.ofNullable(tokens.get(token)).map(UserInfo::mobile);
+    }
+
+    public Optional<UserInfo> findUserInfo(String token) {
         return Optional.ofNullable(tokens.get(token));
     }
 }
