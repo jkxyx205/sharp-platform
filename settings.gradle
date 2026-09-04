@@ -1,0 +1,3 @@
+rootProject.name = 'sharp-platform'
+include "component-site", "component-starter"
+project(":component-starter").projectDir = file("common/component-starter")

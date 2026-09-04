@@ -1,0 +1,7 @@
+group = 'com.rick.site'
+version = libs.versions.sharp.get()
+description = 'site'
+
+dependencies {
+    implementation project(':component-starter')
+}
