@@ -18,4 +18,7 @@ dependencies {
     // nacos 服务注册发现（网关自身注册 + lb:// 路由的服务发现）
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
     implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+
+    // 认证（登录签发 token + 校验请求头中的 token）
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 }
