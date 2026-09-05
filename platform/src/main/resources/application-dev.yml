@@ -39,9 +39,10 @@ dubbo:
   registry:
     address: nacos://127.0.0.1:8848
     register-mode: instance
+  protocol:
+    # Dubbo 协议端口：site=20880，erp=20881，本机同跑需错开
+    port: 20882
   application:
-    # platform 无 Dubbo 服务可导出，纯消费者也需注册实例
-    register-consumer: true
     qos-port: 22225
 
 app:
