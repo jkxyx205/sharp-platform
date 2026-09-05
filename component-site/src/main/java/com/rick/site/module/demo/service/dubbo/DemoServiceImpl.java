@@ -17,7 +17,7 @@ public class DemoServiceImpl implements DemoService {
 
     @Override
     public String sayHello(String name) {
-        Plant plant = plantService.selectByCode("0001").get();
+        Plant plant = plantService.selectByCode("C0013").get();
         return "Hello " + name + " " + plant.getDescription();
     }
 }

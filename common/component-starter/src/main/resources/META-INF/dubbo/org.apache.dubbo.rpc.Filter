@@ -1,0 +1,2 @@
+userContextConsumer=com.rick.common.component.starter.dubbo.UserContextConsumerFilter
+userContextProvider=com.rick.common.component.starter.dubbo.UserContextProviderFilter

@@ -8,6 +8,7 @@ import com.rick.common.http.exception.BizException;
 import com.rick.erp.module.common.exception.ExceptionCodeEnum;
 import com.rick.erp.module.demo.entity.Plant;
 import com.rick.erp.module.demo.service.PlantService;
+import jakarta.annotation.Resource;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -26,6 +27,9 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
     @DubboReference
     private DemoService demoService;
 
+    @Resource
+    PlantService plantService;
+
     public PlantController(PlantService baseService) {
         super(baseService);
     }
@@ -36,6 +40,12 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
         System.out.println(user);
         System.out.println(user2);
         throw new BizException(ExceptionCodeEnum.ERP_EXPIRED);
+    }
+
+    @GetMapping("current")
+    public String getCurrentData() {
+        Plant plant = plantService.selectByCode("C0013").get();
+        return "Hello data" + plant.getDescription();
     }
 
     @GetMapping("dubbo")

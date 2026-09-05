@@ -1,8 +1,8 @@
 package com.rick.erp.module.demo.entity;
 
+import com.rick.common.component.starter.model.ComponentBaseCodeDescriptionEntity;
 import com.rick.db.repository.Column;
 import com.rick.db.repository.Table;
-import com.rick.db.repository.model.BaseCodeDescriptionEntity;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,7 +23,7 @@ import java.util.List;
 @AllArgsConstructor
 @SuperBuilder
 @Table(value = "mm_plant", comment = "库房")
-public class Plant extends BaseCodeDescriptionEntity<Long> {
+public class Plant extends ComponentBaseCodeDescriptionEntity<Long> {
 
     @NotBlank
     private String code;

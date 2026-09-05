@@ -33,6 +33,7 @@ public class ComponentConfig extends SharpWebMvcConfigurer {
 
     public static final String HEADER_USER_ID = "X-User-Id";
     public static final String HEADER_USER_MOBILE = "X-User-Mobile";
+    public static final String HEADER_GROUP_ID = "X-Group-Id";
 
     @Override
     public List<ConverterFactory> converterFactories() {
