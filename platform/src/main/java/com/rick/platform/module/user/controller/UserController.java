@@ -1,12 +1,10 @@
 package com.rick.platform.module.user.controller;
 
 import com.rick.platform.module.user.entity.User;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/users")
 public class UserController {
 
     /**
@@ -15,5 +13,12 @@ public class UserController {
     @GetMapping("me")
     public User me(User user) {
         return user;
+    }
+
+    @PutMapping("chgpwd")
+    public void chgpwd(User user, @RequestHeader("deviceId") String deviceId) {
+        // 存入 redis mobile:deviceId:type
+        // TODO 抽取短信验证的模块
+        // TODO 添加过滤 /users/chgpwd 进行拦截。获取 deviceId， 业务类型 chgpwd mobile：默认当前用户。扩展方法获取 mobile 的方法
     }
 }

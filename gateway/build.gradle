@@ -9,6 +9,8 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation("com.rick.sms:sharp-sms:3.0-SNAPSHOT")
+
     // dubbo
     api 'org.apache.dubbo:dubbo-spring-boot-starter'
     api 'org.apache.dubbo:dubbo-nacos-spring-boot-starter'

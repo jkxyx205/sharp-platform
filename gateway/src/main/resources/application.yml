@@ -1,6 +1,9 @@
 spring:
   application:
     name: gateway
+  config:
+    import:
+      - optional:classpath:.env.sms.properties
   cloud:
     nacos:
       discovery:
@@ -40,3 +43,8 @@ dubbo:
     # 网关无 Dubbo 服务可导出，纯消费者也需注册实例
     register-consumer: true
     qos-port: 22224
+
+ali:
+  access-key:
+    id: ${ID}
+    secret: ${SECRET}
