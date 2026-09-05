@@ -6,10 +6,7 @@ import com.rick.platform.module.user.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -41,9 +38,9 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, @RequestParam String mobile) {
         try {
-            User user = userService.register(request.nickname(), request.mobile(),
+            User user = userService.register(request.nickname(), mobile,
                     request.password(), request.sex());
             return ResponseEntity.ok(toUserInfo(user));
         } catch (AuthException e) {
