@@ -1,13 +1,16 @@
 package com.rick.gateway.controller;
 
-import com.rick.sms.core.Sender;
+import com.rick.gateway.captcha.CaptchaJson;
+import com.rick.gateway.captcha.CodeKind;
+import com.rick.gateway.captcha.ValidateCodeService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @RestController
 @RequestMapping("sms/{mobile}")
@@ -15,37 +18,46 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SmsController {
 
-    Sender sender;
+    ValidateCodeService validateCodeService;
 
     /**
      * 注册用户
      * @param mobile
      */
     @GetMapping("register")
-    public void register(@PathVariable String mobile, @RequestHeader("deviceId") String deviceId) {
-        send(mobile, deviceId, "register");
+    public Mono<ResponseEntity<String>> register(@PathVariable String mobile,
+                                                 @RequestHeader("deviceId") String deviceId) {
+        return send(mobile, deviceId, "register");
     }
 
     /**
+     * 按业务类型发送短信验证码（type 须在 captcha.types 配置为 kind=sms），
+     * 发送成功后存入内存 mobile:deviceId:type，等待业务 URL 过滤器校验。
      *
      * @param mobile
      * @param deviceId
-     * @param type 业务类型
-     *             - 注册
+     * @param type 业务类型，如 register、chgpwd
      */
     @GetMapping
-    public void send(@PathVariable String mobile, @RequestHeader("deviceId") String deviceId, @RequestParam String type) {
-        // 存入 redis mobile:deviceId:type
-        // 等待业务验证
+    public Mono<ResponseEntity<String>> send(@PathVariable String mobile,
+                                             @RequestHeader("deviceId") String deviceId,
+                                             @RequestParam String type) {
+        // 阻塞发送放到 boundedElastic，勿占事件循环
+        return Mono.fromCallable(() -> {
+                    if (validateCodeService.typeSpec(type).getKind() != CodeKind.SMS) {
+                        throw new IllegalArgumentException("type 不是短信验证码: " + type);
+                    }
+                    validateCodeService.sendCode(type, mobile, deviceId);
+                    return ResponseEntity.ok().<String>build();
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorResume(IllegalArgumentException.class, e -> Mono.just(json(400, e.getMessage())))
+                .onErrorResume(e -> Mono.just(json(500, "验证码发送失败")));
+    }
 
-        if ("register".equals(type)) {
-            Map<String, String> params = new HashMap<>(1);
-            params.put("code", "123456");
-            sender.send(mobile, "xx科技", "SMS_23320004", params);
-        } else if ("chgpwd".equals(type)) {
-            Map<String, String> params = new HashMap<>(1);
-            params.put("code", "654321");
-            sender.send(mobile, "xx科技", "SMS_3461330", params);
-        }
+    private static ResponseEntity<String> json(int status, String message) {
+        return ResponseEntity.status(status)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(CaptchaJson.error(status, message));
     }
 }

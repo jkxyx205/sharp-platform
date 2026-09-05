@@ -48,3 +48,30 @@ ali:
   access-key:
     id: ${ID}
     secret: ${SECRET}
+
+# 验证码：有效期、内容可配置；types 定义业务类型（图片/短信+模板），rules 定义需校验的业务 URL
+captcha:
+  expire-seconds: 300
+  sign-name: 点研智能科技
+  image:
+    length: 4
+    width: 120
+    height: 40
+  sms:
+    length: 6
+  types:
+    register:
+      kind: sms
+      template: SMS_182410004
+    chgpwd:
+      kind: sms
+      template: SMS_202561330
+    login:
+      kind: image
+  rules:
+    # 需要验证码校验的业务 URL（网关原始路径，StripPrefix 之前），示例：
+     - url: /auth/register      # type 默认取 URL 最后一段 = register
+     - url: /api/platform/auth/register      # type 默认取 URL 最后一段 = register
+    # - url: /xx/xx/register
+    #   type: user_register
+    #   mobile: com.rick.sms.MobileResolver.getCustomerMobile

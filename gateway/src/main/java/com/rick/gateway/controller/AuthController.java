@@ -7,10 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -70,9 +67,9 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody RegisterRequest request) {
+    public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody RegisterRequest request, @RequestParam String mobile) {
         return webClient.post()
-                .uri("lb://platform/auth/register")
+                .uri("lb://platform/auth/register?mobile=" + mobile)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()

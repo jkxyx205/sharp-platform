@@ -1,10 +1,16 @@
 package com.rick.gateway.config;
 
+import com.rick.gateway.captcha.ValidateCodeFilter;
+import com.rick.gateway.captcha.ValidateCodeProperties;
+import com.rick.gateway.captcha.ValidateCodeService;
 import com.rick.gateway.security.ApiTokenAuthentication;
 import com.rick.gateway.security.TokenAuthenticationManager;
+import com.rick.gateway.security.TokenResolver;
+import com.rick.gateway.security.TokenStore;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -22,23 +28,30 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableWebFluxSecurity
+@EnableConfigurationProperties(ValidateCodeProperties.class)
 public class SecurityConfig {
-
-    private static final String BEARER_PREFIX = "Bearer ";
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http,
-                                                      TokenAuthenticationManager tokenAuthenticationManager) {
+                                                      TokenAuthenticationManager tokenAuthenticationManager,
+                                                      TokenStore tokenStore,
+                                                      ValidateCodeProperties captchaProperties,
+                                                      ValidateCodeService validateCodeService,
+                                                      ApplicationContext context) {
         ServerAuthenticationEntryPoint unauthorizedEntryPoint = (exchange, e) -> writeJson(
                 exchange, HttpStatus.UNAUTHORIZED, "{\"code\":401,\"message\":\"unauthorized\"}");
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/auth/login", "/auth/register", "/sms/{mobile}/register").permitAll()
+                        .pathMatchers("/auth/login", "/auth/register", "/api/platform/auth/register",
+                                "/sms/{mobile}/register", "/sms/{mobile}", "/image/**").permitAll()
                         .anyExchange().authenticated())
                 .addFilterAt(bearerTokenAuthenticationFilter(tokenAuthenticationManager, unauthorizedEntryPoint),
                         SecurityWebFiltersOrder.AUTHENTICATION)
+                // 验证码校验过滤器：位于授权之后，未认证请求先得到 401，验证码问题才是 400
+                .addFilterAfter(new ValidateCodeFilter(captchaProperties, validateCodeService, tokenStore, context),
+                        SecurityWebFiltersOrder.AUTHORIZATION)
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(unauthorizedEntryPoint))
                 .build();
     }
@@ -55,13 +68,13 @@ public class SecurityConfig {
     }
 
     /**
-     * 从 Authorization: Bearer xxx 请求头中提取 token。
+     * 提取 token：优先 Authorization: Bearer xxx 请求头；
+     * SockJS/WebSocket 握手无法自定义请求头，回退到 access_token 查询参数。
      */
     private ServerAuthenticationConverter bearerTokenConverter() {
         return exchange -> Mono
-                .justOrEmpty(exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION))
-                .filter(header -> header.startsWith(BEARER_PREFIX))
-                .map(header -> new ApiTokenAuthentication(header.substring(BEARER_PREFIX.length())));
+                .justOrEmpty(TokenResolver.resolveToken(exchange.getRequest()))
+                .map(ApiTokenAuthentication::new);
     }
 
     private static Mono<Void> writeJson(ServerWebExchange exchange, HttpStatus status, String body) {
