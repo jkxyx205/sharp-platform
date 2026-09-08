@@ -18,6 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +64,7 @@ class ValidateCodeIntegrationTest {
 
     /** 直接造 token 绕过登录（用户 mobile 固定 13800000000） */
     private String bearer() {
-        return "Bearer " + tokenStore.create(1L, "13800000000");
+        return "Bearer " + tokenStore.create(1L, "13800000000", List.of("user"));
     }
 
     @Test

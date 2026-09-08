@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,6 +44,39 @@ public class AuthController {
         this.tokenStore = tokenStore;
     }
 
+    /**
+     * 手机验证码登录
+     * @param request
+     * @return
+     */
+    @PostMapping("/mobile_login")
+    public Mono<ResponseEntity<Map<String, Object>>> mobileLogin(@RequestBody LoginRequest request) {
+        return webClient.post()
+                .uri("lb://platform/auth/mobileLogin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::platformError)
+                .bodyToMono(MAP_TYPE)
+                .map(user -> {
+                    // principal 用 mobile（唯一登录标识），TokenStore 记录 token -> (userId, mobile)
+                    String mobile = user.get("mobile") == null
+                            ? request.mobile() : String.valueOf(user.get("mobile"));
+                    Long userId = user.get("id") instanceof Number id ? id.longValue() : null;
+                    // 权限硬编码：userId=1 视为管理员，后续接入 DB 角色后替换
+                    List<String> permissions = userId != null && userId == 1L
+                            ? List.of("user", "admin") : List.of("user");
+                    String token = tokenStore.create(userId, mobile, permissions);
+                    Map<String, Object> body = new LinkedHashMap<>();
+                    body.put("token", token);
+                    body.put("user", user);
+                    return ResponseEntity.ok(body);
+                })
+                .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
+                // 连接失败 / Nacos 无可用实例等基础设施错误
+                .onErrorResume(e -> Mono.just(unavailable()));
+    }
+
     @PostMapping("/login")
     public Mono<ResponseEntity<Map<String, Object>>> login(@RequestBody LoginRequest request) {
         return webClient.post()
@@ -57,7 +91,10 @@ public class AuthController {
                     String mobile = user.get("mobile") == null
                             ? request.mobile() : String.valueOf(user.get("mobile"));
                     Long userId = user.get("id") instanceof Number id ? id.longValue() : null;
-                    String token = tokenStore.create(userId, mobile);
+                    // 权限硬编码：userId=1 视为管理员，后续接入 DB 角色后替换
+                    List<String> permissions = userId != null && userId == 1L
+                            ? List.of("user", "admin") : List.of("user");
+                    String token = tokenStore.create(userId, mobile, permissions);
                     Map<String, Object> body = new LinkedHashMap<>();
                     body.put("token", token);
                     body.put("user", user);
