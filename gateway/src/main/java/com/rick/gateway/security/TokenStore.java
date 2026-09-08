@@ -33,4 +33,9 @@ public class TokenStore {
     public Optional<UserInfo> findUserInfo(String token) {
         return Optional.ofNullable(tokens.get(token));
     }
+
+    /** 退出登录：移除 token，使其立即失效 */
+    public void remove(String token) {
+        tokens.remove(token);
+    }
 }

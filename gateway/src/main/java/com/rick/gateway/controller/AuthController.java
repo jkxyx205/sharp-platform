@@ -1,5 +1,6 @@
 package com.rick.gateway.controller;
 
+import com.rick.gateway.security.TokenResolver;
 import com.rick.gateway.security.TokenStore;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.core.ParameterizedTypeReference;
@@ -7,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -78,6 +80,19 @@ public class AuthController {
                 .map(ResponseEntity::ok) // 200 + 用户信息，原样透传
                 .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
                 .onErrorResume(e -> Mono.just(unavailable()));
+    }
+
+    /**
+     * 退出登录：移除网关内存中的 token，使其立即失效。
+     * 未列入 SecurityConfig 的 permitAll，因此需携带有效 token 才能到达此处。
+     */
+    @PostMapping("/logout")
+    public Mono<ResponseEntity<Map<String, Object>>> logout(ServerHttpRequest request) {
+        String token = TokenResolver.resolveToken(request);
+        if (token != null) {
+            tokenStore.remove(token);
+        }
+        return Mono.just(ResponseEntity.ok(Map.of("code", "200", "message", "已退出登录")));
     }
 
     /** platform 返回非 2xx：连同状态码与 JSON body 包装成异常，由 onErrorResume 透传 */
