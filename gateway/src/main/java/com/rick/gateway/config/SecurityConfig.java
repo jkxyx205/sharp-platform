@@ -8,6 +8,7 @@ import com.rick.gateway.security.TokenAuthenticationManager;
 import com.rick.gateway.security.TokenResolver;
 import com.rick.gateway.security.TokenStore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.gateway.config.GlobalCorsProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,8 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -43,9 +46,12 @@ public class SecurityConfig {
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                // CORS 由 CorsWebFilter 统一处理：globalcors 只作用于路由转发，
+                // 覆盖不到网关本地 Controller（如 /auth/login），预检会 403
+//                .cors(Customizer.withDefaults())
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/auth/login", "/auth/register", "/api/platform/auth/register",
-                                "/sms/{mobile}/register", "/sms/{mobile}", "/image/**").permitAll()
+                                "/sms/{mobile}/register", "/image/**").permitAll()
                         .anyExchange().authenticated())
                 .addFilterAt(bearerTokenAuthenticationFilter(tokenAuthenticationManager, unauthorizedEntryPoint),
                         SecurityWebFiltersOrder.AUTHENTICATION)
@@ -54,6 +60,22 @@ public class SecurityConfig {
                         SecurityWebFiltersOrder.AUTHORIZATION)
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(unauthorizedEntryPoint))
                 .build();
+    }
+
+    /**
+     * 复用 yml 的 globalcors 配置（GlobalCorsProperties 绑定 spring.cloud.gateway.server.webflux.globalcors），
+     * 交给 Security 的 CorsWebFilter 执行。
+     * <p>
+     * globalcors 本身只注入 RoutePredicateHandlerMapping（/api/** 路由转发），
+     * 网关本地 Controller（如 /auth/login）的预检由 RequestMappingHandlerMapping 处理，
+     * 拿不到该配置会被 DefaultCorsProcessor 以 403 拒绝；CorsWebFilter 在所有 HandlerMapping 之前
+     * 统一处理预检（有效预检直接短路响应，不下发）。
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(GlobalCorsProperties globalCorsProperties) {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        globalCorsProperties.getCorsConfigurations().forEach(source::registerCorsConfiguration);
+        return source;
     }
 
     private AuthenticationWebFilter bearerTokenAuthenticationFilter(
