@@ -57,7 +57,8 @@ public class ValidateCodeService {
     }
 
     /**
-     * 校验并一次性消费：比对成功即删除；比对失败不删除（有效期内可重试）。
+     * 校验（不消费）：比对成功返回 OK，验证码保留；比对失败不删除（有效期内可重试）。
+     * 业务处理成功后由调用方调用 {@link #consume} 消费，业务失败则验证码仍可用于重试。
      */
     public VerifyResult verify(CodeKind kind, String type, String mobile, String deviceId, String input) {
         String key = ValidateCodeStore.buildKey(kind, mobile, deviceId, type);
@@ -65,11 +66,15 @@ public class ValidateCodeService {
         if (stored == null) {
             return VerifyResult.NOT_FOUND_OR_EXPIRED;
         }
-        if (!stored.matches(input)) {
-            return VerifyResult.MISMATCH;
-        }
-        // 原子消费，并发双提交只允许一个通过
-        return store.consume(key, stored) ? VerifyResult.OK : VerifyResult.NOT_FOUND_OR_EXPIRED;
+        return stored.matches(input) ? VerifyResult.OK : VerifyResult.MISMATCH;
+    }
+
+    /**
+     * 消费验证码：仅当存储中仍是同一验证码时原子删除（期间重新发码不会误删新码）。
+     */
+    public void consume(CodeKind kind, String type, String mobile, String deviceId) {
+        String key = ValidateCodeStore.buildKey(kind, mobile, deviceId, type);
+        store.get(key).ifPresent(code -> store.consume(key, code));
     }
 
     public ValidateCodeProperties.TypeSpec typeSpec(String type) {

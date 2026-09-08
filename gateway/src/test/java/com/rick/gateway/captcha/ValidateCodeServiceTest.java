@@ -81,14 +81,17 @@ class ValidateCodeServiceTest {
     }
 
     @Test
-    void verifyStatesAndOneShot() {
+    void verifyDoesNotConsumeCode() {
         service.sendCode("register", "13800000000", "dev-1");
         String content = store.get("13800000000:dev-1:register").orElseThrow().content();
 
         assertEquals(MISMATCH, service.verify(CodeKind.SMS, "register", "13800000000", "dev-1", "xxxxxx"));
         // 错误不删码，可重试
         assertEquals(OK, service.verify(CodeKind.SMS, "register", "13800000000", "dev-1", content));
-        // 一次性：成功后再验必失败
+        // 校验通过也不删码（业务失败可重试），再验仍 OK
+        assertEquals(OK, service.verify(CodeKind.SMS, "register", "13800000000", "dev-1", content));
+        // 业务成功后 consume 才失效
+        service.consume(CodeKind.SMS, "register", "13800000000", "dev-1");
         assertEquals(NOT_FOUND_OR_EXPIRED, service.verify(CodeKind.SMS, "register", "13800000000", "dev-1", content));
     }
 

@@ -67,13 +67,18 @@ class ValidateCodeFilterTest {
 
     /** 执行过滤器，返回 exchange；chain 模拟下游置 200，故 200 = 校验通过，400 = 被过滤器拒绝 */
     private MockServerWebExchange run(String uri, String... headerPairs) {
+        return runWithStatus(uri, HttpStatus.OK, headerPairs);
+    }
+
+    /** 模拟下游业务返回指定状态码（非 2xx = 业务失败） */
+    private MockServerWebExchange runWithStatus(String uri, HttpStatus downstreamStatus, String... headerPairs) {
         var builder = MockServerHttpRequest.get(uri);
         for (int i = 0; i < headerPairs.length; i += 2) {
             builder.header(headerPairs[i], headerPairs[i + 1]);
         }
         MockServerWebExchange exchange = MockServerWebExchange.from(builder);
         filter.filter(exchange, e -> {
-            e.getResponse().setStatusCode(HttpStatus.OK);
+            e.getResponse().setStatusCode(downstreamStatus);
             return Mono.empty();
         }).block();
         return exchange;
@@ -120,6 +125,21 @@ class ValidateCodeFilterTest {
         MockServerWebExchange second = run("/biz/register?mobile=13800000000&code=123456", "deviceId", "dev-1");
         assertEquals(HttpStatus.BAD_REQUEST, second.getResponse().getStatusCode());
         assertBody(second, "验证码不存在或已失效");
+    }
+
+    @Test
+    void businessFailureKeepsCodeRetryable() {
+        store.put("13800000000:dev-1:register", code("123456"));
+        // 验证码正确但下游业务失败（409）：不消费验证码
+        assertEquals(HttpStatus.CONFLICT,
+                runWithStatus("/biz/register?mobile=13800000000&code=123456", HttpStatus.CONFLICT,
+                        "deviceId", "dev-1").getResponse().getStatusCode());
+        // 同一验证码可重试，业务成功（200）后才消费
+        assertEquals(HttpStatus.OK,
+                run("/biz/register?mobile=13800000000&code=123456", "deviceId", "dev-1").getResponse().getStatusCode());
+        MockServerWebExchange third = run("/biz/register?mobile=13800000000&code=123456", "deviceId", "dev-1");
+        assertEquals(HttpStatus.BAD_REQUEST, third.getResponse().getStatusCode());
+        assertBody(third, "验证码不存在或已失效");
     }
 
     @Test

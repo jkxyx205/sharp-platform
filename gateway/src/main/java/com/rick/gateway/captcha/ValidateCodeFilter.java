@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -27,7 +28,8 @@ import java.util.Optional;
 
 /**
  * 验证码校验过滤器：匹配配置的业务 URL 规则，取 deviceId（请求头）、mobile（自定义方法 → 用户上下文 →
- * query 参数兜底）与客户端提交的 code（query 参数 code，兼容请求头 code），比对存储的验证码，通过后一次性消费。
+ * query 参数兜底）与客户端提交的 code（query 参数 code，兼容请求头 code），比对存储的验证码，
+ * 通过后放行，下游业务成功（2xx）才消费验证码；业务失败保留，可用同一验证码重试。
  * <p>
  * 注意：不能注册为 Spring Bean —— WebFlux 会把所有 WebFilter Bean 自动挂进全局过滤链，
  * 导致其在 security 链之外重复执行。由 SecurityConfig 实例化并加入 security 链 AUTHORIZATION 之后：
@@ -104,22 +106,32 @@ public class ValidateCodeFilter implements WebFilter {
 
     private Mono<Void> verify(ServerWebExchange exchange, WebFilterChain chain, CompiledRule rule,
                               String deviceId, String code, User user) {
-        String mobile = null;
+        final String mobile;
         if (rule.spec().getKind() == CodeKind.SMS) {
+            String resolved;
             try {
-                mobile = resolveMobile(rule, user, exchange.getRequest());
+                resolved = resolveMobile(rule, user, exchange.getRequest());
             } catch (RuntimeException e) {
                 log.warn("自定义 mobile 解析方法执行失败, type={}: {}", rule.type(), e.toString());
                 return reject(exchange, "获取手机号失败");
             }
-            if (!StringUtils.hasText(mobile)) {
+            if (!StringUtils.hasText(resolved)) {
                 return reject(exchange, "无法获取手机号");
             }
+            mobile = resolved;
+        } else {
+            mobile = null;
         }
         ValidateCodeService.VerifyResult result =
                 service.verify(rule.spec().getKind(), rule.type(), mobile, deviceId, code);
         return switch (result) {
-            case OK -> chain.filter(exchange);
+            // 先放行，下游业务成功（2xx）才消费验证码；业务失败保留，可用同一验证码重试
+            case OK -> chain.filter(exchange).then(Mono.fromRunnable(() -> {
+                HttpStatusCode status = exchange.getResponse().getStatusCode();
+                if (status != null && status.is2xxSuccessful()) {
+                    service.consume(rule.spec().getKind(), rule.type(), mobile, deviceId);
+                }
+            }));
             case NOT_FOUND_OR_EXPIRED -> reject(exchange, "验证码不存在或已失效");
             case MISMATCH -> reject(exchange, "验证码错误");
         };
