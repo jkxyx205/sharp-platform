@@ -51,7 +51,7 @@ public class SecurityConfig {
 //                .cors(Customizer.withDefaults())
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/auth/login", "/auth/register", "/api/platform/auth/register",
-                                "/sms/{mobile}/register", "/image/**").permitAll()
+                                "/sms/{mobile}/register", "/image/login").permitAll()
                         .anyExchange().authenticated())
                 .addFilterAt(bearerTokenAuthenticationFilter(tokenAuthenticationManager, unauthorizedEntryPoint),
                         SecurityWebFiltersOrder.AUTHENTICATION)

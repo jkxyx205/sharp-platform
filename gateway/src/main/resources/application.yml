@@ -95,3 +95,5 @@ captcha:
     #   type: user_register
     #   mobile: com.rick.sms.MobileResolver.getCustomerMobile
      - url: /api/platform/users/chgpwd
+     - url: /auth/login
+       type: login

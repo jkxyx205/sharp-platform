@@ -36,8 +36,13 @@ public class ImageCodeController {
         this.properties = properties;
     }
 
-    @GetMapping("{type}")
-    public Mono<ResponseEntity<Resource>> image(@PathVariable String type,
+    @GetMapping("login")
+    public Mono<ResponseEntity<Resource>> loginImage(@RequestHeader(value = "deviceId", required = false) String deviceId) {
+        return image("login", deviceId);
+    }
+
+    @GetMapping
+    public Mono<ResponseEntity<Resource>> image(@RequestParam String type,
                                                 @RequestHeader(value = "deviceId", required = false) String deviceId) {
         // 渲染为 CPU 阻塞操作，放到 boundedElastic，勿占事件循环
         return Mono.fromCallable(() -> {
