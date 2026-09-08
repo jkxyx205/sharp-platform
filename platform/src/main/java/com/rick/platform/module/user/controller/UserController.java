@@ -36,6 +36,10 @@ public class UserController {
         simpMessagingTemplate.convertAndSendToUser(String.valueOf(user.getId()), "/queue/message", "密码修改成功");
     }
 
+    /**
+     * 推送消息到前端
+     * @param user
+     */
     @GetMapping("messages")
     public void getMessage(User user) {
         simpMessagingTemplate.convertAndSendToUser(String.valueOf(user.getId()), "/queue/message", "message :" + System.currentTimeMillis());

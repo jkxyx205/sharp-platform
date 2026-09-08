@@ -13,6 +13,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  *   stompClient.subscribe("/user/queue/message", ...)
  * </pre>
  * 推送方：{@code simpMessagingTemplate.convertAndSendToUser(userId, "/queue/message", payload)}。
+ * <p>
+ * 页面 → 服务端：发送到 /app/** 前缀，由 @MessageMapping 方法处理
+ * （见 {@code MessageWsController}）。
  */
 @Configuration
 @EnableWebSocketMessageBroker
@@ -42,5 +45,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/queue");
         registry.setUserDestinationPrefix("/user");
+        // 页面发往 /app/** 的消息路由到 @MessageMapping 处理方法
+        registry.setApplicationDestinationPrefixes("/app");
     }
 }
