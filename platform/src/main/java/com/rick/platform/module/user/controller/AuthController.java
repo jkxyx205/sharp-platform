@@ -58,6 +58,16 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/mobileLogin")
+    public ResponseEntity<?> mobileLogin(@Valid @RequestBody LoginRequest request) {
+        try {
+            User user = userService.login(request.mobile());
+            return ResponseEntity.ok(toUserInfo(user));
+        } catch (AuthException e) {
+            return error(e);
+        }
+    }
+
     private static UserInfo toUserInfo(User user) {
         return new UserInfo(user.getId(), user.getNickname(), user.getMobile(), user.getAvatar());
     }

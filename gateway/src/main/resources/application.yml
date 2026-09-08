@@ -87,6 +87,9 @@ captcha:
       template: SMS_202561330
     login:
       kind: image
+    mobile_login:
+      kind: sms
+      template: SMS_182410004
   rules:
     # 需要验证码校验的业务 URL（网关原始路径，StripPrefix 之前），示例：
      - url: /auth/register      # type 默认取 URL 最后一段 = register
@@ -97,3 +100,5 @@ captcha:
      - url: /api/platform/users/chgpwd
      - url: /auth/login
        type: login
+       # 手机验证码登录
+     - url: /auth/mobile_login

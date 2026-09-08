@@ -31,6 +31,16 @@ public class SmsController {
     }
 
     /**
+     * 手机登录验证码
+     * @param mobile
+     */
+    @GetMapping("mobile_login")
+    public Mono<ResponseEntity<String>> login(@PathVariable String mobile,
+                                                 @RequestHeader("deviceId") String deviceId) {
+        return send(mobile, deviceId, "mobile_login");
+    }
+
+    /**
      * 按业务类型发送短信验证码（type 须在 captcha.types 配置为 kind=sms），
      * 发送成功后存入内存 mobile:deviceId:type，等待业务 URL 过滤器校验。
      *

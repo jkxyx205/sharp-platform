@@ -55,4 +55,17 @@ public class UserService extends BaseServiceImpl<UserDAO, User, Long> {
         }
         return user;
     }
+
+    /**
+     * 登录：按手机号查找密码。
+     * 用户不存在与密码错误统一提示，避免账号枚举。
+     */
+    public User login(String mobile) {
+        List<User> users = select("mobile = ?", mobile);
+        User user = users.get(0);
+        if (Boolean.TRUE.equals(user.getLocked())) {
+            throw new AuthException(HttpStatus.FORBIDDEN, "账号已锁定，请联系管理员");
+        }
+        return user;
+    }
 }

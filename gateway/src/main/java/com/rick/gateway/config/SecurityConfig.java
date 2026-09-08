@@ -22,6 +22,7 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
+import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
@@ -43,6 +44,9 @@ public class SecurityConfig {
                                                       ApplicationContext context) {
         ServerAuthenticationEntryPoint unauthorizedEntryPoint = (exchange, e) -> writeJson(
                 exchange, HttpStatus.UNAUTHORIZED, "{\"code\":401,\"message\":\"unauthorized\"}");
+        // 已认证但权限不足：返回 JSON 403（默认是空 body），与 401 风格一致
+        ServerAccessDeniedHandler accessDeniedHandler = (exchange, e) -> writeJson(
+                exchange, HttpStatus.FORBIDDEN, "{\"code\":403,\"message\":\"forbidden\"}");
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -50,15 +54,19 @@ public class SecurityConfig {
                 // 覆盖不到网关本地 Controller（如 /auth/login），预检会 403
 //                .cors(Customizer.withDefaults())
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/auth/login", "/auth/register", "/api/platform/auth/register",
-                                "/sms/{mobile}/register", "/image/login").permitAll()
+                        .pathMatchers("/auth/login", "/auth/mobile_login", "/auth/register", "/api/platform/auth/register",
+                                "/sms/{mobile}/register", "/sms/{mobile}/mobile_login", "/image/login").permitAll()
+                        // 授权示例：erp 路由需要 admin 权限（登录时硬编码分配，见 AuthController）
+                        .pathMatchers("/api/erp/**").hasAuthority("admin")
                         .anyExchange().authenticated())
                 .addFilterAt(bearerTokenAuthenticationFilter(tokenAuthenticationManager, unauthorizedEntryPoint),
                         SecurityWebFiltersOrder.AUTHENTICATION)
                 // 验证码校验过滤器：位于授权之后，未认证请求先得到 401，验证码问题才是 400
                 .addFilterAfter(new ValidateCodeFilter(captchaProperties, validateCodeService, tokenStore, context),
                         SecurityWebFiltersOrder.AUTHORIZATION)
-                .exceptionHandling(handling -> handling.authenticationEntryPoint(unauthorizedEntryPoint))
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint(unauthorizedEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 .build();
     }
 
