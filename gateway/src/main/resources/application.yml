@@ -71,7 +71,7 @@ ali:
 # 验证码：有效期、内容可配置；types 定义业务类型（图片/短信+模板），rules 定义需校验的业务 URL
 captcha:
   expire-seconds: 300
-  sign-name: 点研智能科技
+  sign-name: ${SIGN_NAME}
   image:
     length: 4
     width: 120
@@ -81,24 +81,25 @@ captcha:
   types:
     register:
       kind: sms
-      template: SMS_182410004
+      template: ${REGISTER_TEMPLATE}
       # 发送前业务预检查：CodePreHandler Bean 名，已注册手机号拒绝发码
       pre-handler: registerCodePreHandler
     chgpwd:
       kind: sms
-      template: SMS_202561330
+      template: ${CHGPWD_TEMPLATE}
     login:
       kind: image
     mobile_login:
       kind: sms
-      template: SMS_182410004
+      template: ${MOBILE_LOGIN_TEMPLATE}
   rules:
     # 需要验证码校验的业务 URL（网关原始路径，StripPrefix 之前），示例：
      - url: /auth/register      # type 默认取 URL 最后一段 = register
+       mobile: registerMobileResolver
      - url: /api/platform/auth/register      # type 默认取 URL 最后一段 = register
     # - url: /xx/xx/register
     #   type: user_register
-    #   mobile: com.rick.sms.MobileResolver.getCustomerMobile
+    #   mobile: registerMobileResolver   # MobileResolver 的 Spring Bean 名
      - url: /api/platform/users/chgpwd
      - url: /auth/login
        type: login

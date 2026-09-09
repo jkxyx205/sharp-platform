@@ -66,7 +66,7 @@ public class ValidateCodeProperties implements InitializingBean {
         private String url;
         /** 业务类型，默认取 url 最后一段 */
         private String type;
-        /** 自定义 mobile 解析方法：全限定类名.方法名 */
+        /** 自定义 mobile 解析：MobileResolver 的 Spring Bean 名，未配置则走默认解析链 */
         private String mobile;
 
         public String effectiveType() {

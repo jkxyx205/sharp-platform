@@ -15,18 +15,20 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * 过滤器逻辑测试：无认证上下文（user=null），
- * mobile 走 query 参数兜底或自定义解析方法。
+ * mobile 走 query 参数兜底或自定义 MobileResolver Bean。
  */
 class ValidateCodeFilterTest {
 
-    public static class TestResolver {
-        public static String getMobile(User user, String type) {
+    /** 固定返回测试手机号的 resolver，按 bean 名 testResolver 注册进 mock 容器 */
+    public static class TestResolver implements MobileResolver {
+        @Override
+        public String getMobile(User user, String mobile, String type) {
             return "17799999999";
         }
     }
@@ -48,13 +50,21 @@ class ValidateCodeFilterTest {
         properties.setRules(List.of(
                 rule("/biz/register", null, null),                       // type 默认取末段 register
                 rule("/biz/login", "login", null),
-                rule("/biz/custom", "register", TestResolver.class.getName() + ".getMobile")));
+                rule("/biz/custom", "register", "testResolver")));
         properties.afterPropertiesSet();
 
         store = new ValidateCodeStore();
         ValidateCodeService service =
                 new ValidateCodeService(properties, store, mock(ValidateCodeSender.class), Map.of());
-        filter = new ValidateCodeFilter(properties, service, new TokenStore(), mock(ApplicationContext.class));
+        filter = new ValidateCodeFilter(properties, service, new TokenStore(),
+                contextWith(Map.of("testResolver", new TestResolver())));
+    }
+
+    /** mock 容器：getBeansOfType(MobileResolver) 返回指定 bean 表 */
+    private static ApplicationContext contextWith(Map<String, MobileResolver> resolvers) {
+        ApplicationContext context = mock(ApplicationContext.class);
+        when(context.getBeansOfType(MobileResolver.class)).thenReturn(resolvers);
+        return context;
     }
 
     private static ValidateCodeProperties.Rule rule(String url, String type, String mobile) {
@@ -163,9 +173,27 @@ class ValidateCodeFilterTest {
     @Test
     void customResolverSuppliesMobile() {
         store.put("17799999999:dev-1:register", code("123456"));
-        // 不传 mobile，由自定义方法解析
+        // 不传 mobile，由自定义 resolver Bean 解析
         assertEquals(HttpStatus.OK,
                 run("/biz/custom?code=123456", "deviceId", "dev-1").getResponse().getStatusCode());
+    }
+
+    @Test
+    void unknownResolverBeanFailsFast() {
+        ValidateCodeProperties properties = new ValidateCodeProperties();
+        ValidateCodeProperties.TypeSpec sms = new ValidateCodeProperties.TypeSpec();
+        sms.setKind(CodeKind.SMS);
+        sms.setTemplate("SMS_T");
+        properties.setTypes(Map.of("register", sms));
+        properties.setRules(List.of(rule("/biz/x", "register", "noSuchResolver")));
+        ValidateCodeService service = new ValidateCodeService(properties, new ValidateCodeStore(),
+                mock(ValidateCodeSender.class), Map.of());
+
+        // yml 里的 bean 名笔误在启动期（构造过滤器）即失败，并带定位信息
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new ValidateCodeFilter(properties, service, new TokenStore(), contextWith(Map.of())));
+        assertTrue(e.getMessage().contains("noSuchResolver"));
+        assertTrue(e.getMessage().contains("/biz/x"));
     }
 
     @Test

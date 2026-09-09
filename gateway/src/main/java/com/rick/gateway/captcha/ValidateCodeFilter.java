@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -58,8 +59,9 @@ public class ValidateCodeFilter implements WebFilter {
         this.rules = compile(properties, context);
     }
 
-    /** 启动期预编译规则，url / type / mobile 方法引用非法直接启动失败 */
+    /** 启动期预编译规则，url / type 非法或 mobile Bean 名未注册直接启动失败 */
     private static List<CompiledRule> compile(ValidateCodeProperties properties, ApplicationContext context) {
+        Map<String, MobileResolver> resolvers = context.getBeansOfType(MobileResolver.class);
         List<CompiledRule> compiled = new ArrayList<>(properties.getRules().size());
         for (ValidateCodeProperties.Rule rule : properties.getRules()) {
             PathPattern pattern;
@@ -71,9 +73,13 @@ public class ValidateCodeFilter implements WebFilter {
             String type = rule.effectiveType();
             ValidateCodeProperties.TypeSpec spec = properties.getTypes().get(type);
             Assert.notNull(spec, "captcha.types 缺少 type 配置: " + type + "（url: " + rule.getUrl() + "）");
-            MobileResolver resolver = StringUtils.hasText(rule.getMobile())
-                    ? MobileResolver.compile(rule.getMobile(), context)
-                    : null;
+            MobileResolver resolver = null;
+            if (StringUtils.hasText(rule.getMobile())) {
+                resolver = resolvers.get(rule.getMobile());
+                Assert.notNull(resolver,
+                        "captcha.rules[].mobile 未找到 MobileResolver Bean: " + rule.getMobile()
+                                + "（url: " + rule.getUrl() + "）");
+            }
             compiled.add(new CompiledRule(pattern, type, spec, resolver));
         }
         return List.copyOf(compiled);
@@ -138,11 +144,13 @@ public class ValidateCodeFilter implements WebFilter {
     }
 
     /**
-     * sms 规则 mobile 解析顺序：自定义方法 → 用户上下文 → query 参数 mobile（匿名接口兜底）。
+     * sms 规则 mobile 解析顺序：自定义 resolver（入参：用户上下文 + query 原始 mobile）
+     * → 用户上下文 → query 参数 mobile（匿名接口兜底）。
      */
     private String resolveMobile(CompiledRule rule, User user, ServerHttpRequest request) {
+        String queryMobile = request.getQueryParams().getFirst(PARAM_MOBILE);
         if (rule.mobileResolver() != null) {
-            String mobile = rule.mobileResolver().resolve(user, rule.type());
+            String mobile = rule.mobileResolver().getMobile(user, queryMobile, rule.type());
             if (StringUtils.hasText(mobile)) {
                 return mobile;
             }
@@ -150,7 +158,7 @@ public class ValidateCodeFilter implements WebFilter {
         if (user != null && StringUtils.hasText(user.mobile())) {
             return user.mobile();
         }
-        return request.getQueryParams().getFirst(PARAM_MOBILE);
+        return queryMobile;
     }
 
     /**
