@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +125,8 @@ public class AuthController {
      * 未列入 SecurityConfig 的 permitAll，因此需携带有效 token 才能到达此处。
      */
     @PostMapping("/logout")
-    public Mono<ResponseEntity<Map<String, Object>>> logout(ServerHttpRequest request) {
+    public Mono<ResponseEntity<Map<String, Object>>> logout(ServerHttpRequest request, Principal principal) {
+        System.out.println(principal);
         String token = TokenResolver.resolveToken(request);
         if (token != null) {
             tokenStore.remove(token);

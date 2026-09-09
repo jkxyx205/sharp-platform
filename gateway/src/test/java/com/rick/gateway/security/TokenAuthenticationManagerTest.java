@@ -7,6 +7,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,7 +20,7 @@ class TokenAuthenticationManagerTest {
     @BeforeEach
     void setUp() {
         tokenStore = new TokenStore();
-        manager = new TokenAuthenticationManager(tokenStore);
+        manager = new TokenAuthenticationManager(new TokenUserDetailsService(tokenStore));
     }
 
     @Test
@@ -27,11 +29,13 @@ class TokenAuthenticationManagerTest {
 
         Authentication auth = manager.authenticate(new ApiTokenAuthentication(token)).block();
 
-        assertEquals("13800000000", auth.getPrincipal());
+        // principal 为 UserDetails，getName() 返回 username（mobile）
+        assertEquals("13800000000", auth.getName());
         assertTrue(auth.isAuthenticated());
-        List<String> authorities = auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority).toList();
-        assertEquals(List.of("user", "admin"), authorities);
+        // UserDetails 会对 authorities 排序，按集合比较
+        Set<String> authorities = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+        assertEquals(Set.of("user", "admin"), authorities);
     }
 
     @Test
