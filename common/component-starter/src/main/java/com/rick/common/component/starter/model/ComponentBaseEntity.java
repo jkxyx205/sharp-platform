@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class ComponentBasEntity<ID> extends BaseEntity<ID> implements GroupIdGetter {
+public class ComponentBaseEntity<ID> extends BaseEntity<ID> implements GroupIdGetter {
 
     @Column(value = "group_id", updatable = false, comment = "所属公司id")
     @JsonSerialize(using = ToStringSerializer.class)

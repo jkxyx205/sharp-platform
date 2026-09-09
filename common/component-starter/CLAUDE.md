@@ -27,7 +27,7 @@
   三个都要，缺一个就缺对应能力（见 API.md §6）。
 - 获取当前用户：**Controller 用 `User` 参数注入；其他层用 `UserContextHolder.get()`（只读）**。`put`/`remove` 由拦截器和 Dubbo Filter 负责，业务代码禁止调用。
 - 数据库访问：**注入 `TableDAO` Bean（已 `@Primary`）或经 `BaseServiceImpl`**。不要自己 new `ExtendTableDAOImpl`，不要手写 `group_id` 条件（会被重复拼接）。
-- 实体基类：site/erp 的实体**必须继承 `ComponentBasEntity` / `ComponentBaseCodeEntity` / `ComponentBaseCodeDescriptionEntity`**，不要直接继承 sharp-database 的 `BaseEntity` 系列（否则丢失 `groupId` 字段与保存回填）。
+- 实体基类：site/erp 的实体**必须继承 `ComponentBaseEntity` / `ComponentBaseCodeEntity` / `ComponentBaseCodeDescriptionEntity`**，不要直接继承 sharp-database 的 `BaseEntity` 系列（否则丢失 `groupId` 字段与保存回填）。
 - 写 URL：本模块给**所有** Controller 映射自动加 `{groupId}` 前缀（`BasicErrorController` 除外）。`@RequestMapping("plants")` 的实际路径是 `/{groupId}/plants`。测试或客户端调用时必须带前缀，如 `/1/plants`。
 - 抛业务异常：用 `ResourceNotFoundException` 或 sharp-common 的 `BizException` + `ExceptionCodeEnum`，统一由 `ApiExceptionHandler`（`ComponentConfig` 自动扫描注册）转 JSON，不要自己 try-catch 转响应。
 

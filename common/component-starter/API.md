@@ -143,7 +143,7 @@ site/erp 的所有数据库实体**必须**继承下列之一（而不是 sharp-
 
 | 基类 ⭐ | 继承自（sharp-database） | 适用实体 |
 | --- | --- | --- |
-| `ComponentBasEntity<ID>` | `BaseEntity<ID>` | 普通实体 |
+| `ComponentBaseEntity<ID>` | `BaseEntity<ID>` | 普通实体 |
 | `ComponentBaseCodeEntity<ID>` | `BaseCodeEntity<ID>` | 带 `code` 的实体（配合 `BaseCodeApi`） |
 | `ComponentBaseCodeDescriptionEntity<ID>` | `BaseCodeDescriptionEntity<ID>` | 带 `code` + `description` 的实体 |
 
