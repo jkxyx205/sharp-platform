@@ -2,6 +2,7 @@ package com.rick.gateway.controller;
 
 import com.rick.gateway.captcha.CaptchaJson;
 import com.rick.gateway.captcha.CodeKind;
+import com.rick.gateway.captcha.PreHandlerException;
 import com.rick.gateway.captcha.ValidateCodeService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +63,8 @@ public class SmsController {
                 })
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorResume(IllegalArgumentException.class, e -> Mono.just(json(400, e.getMessage())))
+                // 业务预检查拒绝（如「该手机号已注册」）：文案直达前端
+                .onErrorResume(PreHandlerException.class, e -> Mono.just(json(400, e.getMessage())))
                 .onErrorResume(e -> Mono.just(json(500, "验证码发送失败")));
     }
 

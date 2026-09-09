@@ -1,10 +1,14 @@
 package com.rick.gateway.captcha;
 
 import com.rick.sms.core.ValidateCodeSender;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * 验证码服务：统一发送入口，按 type 配置分发——
@@ -13,29 +17,45 @@ import java.time.Instant;
  * 短信发送为阻塞调用，调用方须置于 {@code Schedulers.boundedElastic()} 线程，勿在事件循环线程调用。
  */
 @Service
-public class ValidateCodeService {
+public class ValidateCodeService implements InitializingBean {
 
     private final ValidateCodeProperties properties;
     private final ValidateCodeStore store;
     private final ValidateCodeSender validateCodeSender;
+    /** beanName -> 预检查实现（Spring 按类型收集所有 CodePreHandler Bean） */
+    private final Map<String, CodePreHandler> preHandlers;
     private final SecureRandom random = new SecureRandom();
 
     public ValidateCodeService(ValidateCodeProperties properties,
                                ValidateCodeStore store,
-                               ValidateCodeSender validateCodeSender) {
+                               ValidateCodeSender validateCodeSender,
+                               Map<String, CodePreHandler> preHandlers) {
         this.properties = properties;
         this.store = store;
         this.validateCodeSender = validateCodeSender;
+        this.preHandlers = preHandlers;
+    }
+
+    /** 启动期校验配置的 preHandler bean 名存在，yml 笔误直接启动失败 */
+    @Override
+    public void afterPropertiesSet() {
+        properties.getTypes().forEach((type, spec) -> {
+            if (StringUtils.hasText(spec.getPreHandler())) {
+                Assert.isTrue(preHandlers.containsKey(spec.getPreHandler()),
+                        "captcha.types." + type + ".pre-handler 未找到 CodePreHandler Bean: " + spec.getPreHandler());
+            }
+        });
     }
 
     /**
-     * 统一发送入口：按 type 生成验证码并存储；短信类型同时选择模板发送，
-     * 图片类型由调用方渲染返回的内容。
+     * 统一发送入口：先执行 type 配置的业务预检查，再按 type 生成验证码并存储；
+     * 短信类型同时选择模板发送，图片类型由调用方渲染返回的内容。
      *
      * @return 生成的验证码
      */
     public ValidateCode sendCode(String type, String mobile, String deviceId) {
         ValidateCodeProperties.TypeSpec spec = typeSpec(type);
+        preCheck(spec, mobile);
         String content = spec.getKind() == CodeKind.IMAGE ? imageCode() : smsCode();
         ValidateCode code = new ValidateCode(content, expireAt(spec));
         String key = ValidateCodeStore.buildKey(spec.getKind(), mobile, deviceId, type);
@@ -50,6 +70,20 @@ public class ValidateCodeService {
             }
         }
         return code;
+    }
+
+    /**
+     * 业务预检查：type 配置了 pre-handler 且 mobile 有值才执行（图片码无 mobile，天然跳过）。
+     * handler 返回 false → 默认文案拒绝；抛异常 → 原样冒泡（携带业务文案）。
+     */
+    private void preCheck(ValidateCodeProperties.TypeSpec spec, String mobile) {
+        if (!StringUtils.hasText(spec.getPreHandler()) || !StringUtils.hasText(mobile)) {
+            return;
+        }
+        CodePreHandler handler = preHandlers.get(spec.getPreHandler());
+        if (!handler.handler(mobile)) {
+            throw new PreHandlerException("当前业务不允许发送验证码");
+        }
     }
 
     public enum VerifyResult {

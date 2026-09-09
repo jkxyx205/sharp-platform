@@ -37,6 +37,15 @@ public class AuthController {
         this.userService = userService;
     }
 
+    /**
+     * 手机号是否已注册：网关发送注册验证码前的预检查（lb://platform 内部调用），
+     * 与 register 内的唯一性检查同一查询。
+     */
+    @GetMapping("/mobile_exists")
+    public boolean mobileExists(@RequestParam String mobile) {
+        return userService.exists("mobile = ?", mobile);
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, @RequestParam String mobile) {
         try {

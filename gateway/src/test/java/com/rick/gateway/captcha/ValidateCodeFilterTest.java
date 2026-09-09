@@ -53,7 +53,7 @@ class ValidateCodeFilterTest {
 
         store = new ValidateCodeStore();
         ValidateCodeService service =
-                new ValidateCodeService(properties, store, mock(ValidateCodeSender.class));
+                new ValidateCodeService(properties, store, mock(ValidateCodeSender.class), Map.of());
         filter = new ValidateCodeFilter(properties, service, new TokenStore(), mock(ApplicationContext.class));
     }
 

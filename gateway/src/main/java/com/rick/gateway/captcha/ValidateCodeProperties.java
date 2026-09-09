@@ -56,6 +56,8 @@ public class ValidateCodeProperties implements InitializingBean {
         private String template;
         /** 本 type 有效期（秒），覆盖全局 */
         private Long expireSeconds;
+        /** 发送前业务预检查：CodePreHandler 的 Spring Bean 名，未配置则不检查 */
+        private String preHandler;
     }
 
     @Data

@@ -32,6 +32,11 @@ import static org.mockito.Mockito.verify;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "spring.cloud.nacos.discovery.enabled=false",
         "spring.cloud.discovery.enabled=false",
+        // 测试专用签名/模板，隔离主 yml 的真实值变更
+        "captcha.sign-name=xx科技",
+        "captcha.types.register.template=SMS_23320004",
+        // 预检查依赖 Dubbo 调 platform（测试环境无），逻辑已由 ValidateCodeServiceTest 覆盖，此处关闭
+        "captcha.types.register.pre-handler=",
         "captcha.rules[0].url=/test/image-flow",
         "captcha.rules[0].type=login",
         "captcha.rules[1].url=/test/sms-flow",

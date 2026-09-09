@@ -82,6 +82,8 @@ captcha:
     register:
       kind: sms
       template: SMS_182410004
+      # 发送前业务预检查：CodePreHandler Bean 名，已注册手机号拒绝发码
+      pre-handler: registerCodePreHandler
     chgpwd:
       kind: sms
       template: SMS_202561330
