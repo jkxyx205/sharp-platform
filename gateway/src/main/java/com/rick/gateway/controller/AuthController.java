@@ -59,20 +59,7 @@ public class AuthController {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::platformError)
                 .bodyToMono(MAP_TYPE)
-                .map(user -> {
-                    // principal 用 mobile（唯一登录标识），TokenStore 记录 token -> (userId, mobile)
-                    String mobile = user.get("mobile") == null
-                            ? request.mobile() : String.valueOf(user.get("mobile"));
-                    Long userId = user.get("id") instanceof Number id ? id.longValue() : null;
-                    // 权限硬编码：userId=1 视为管理员，后续接入 DB 角色后替换
-                    List<String> permissions = userId != null && userId == 1L
-                            ? List.of("user", "admin") : List.of("user");
-                    String token = tokenStore.create(userId, mobile, permissions);
-                    Map<String, Object> body = new LinkedHashMap<>();
-                    body.put("token", token);
-                    body.put("user", user);
-                    return ResponseEntity.ok(body);
-                })
+                .map(user -> issueToken(user, request.mobile()))
                 .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
                 // 连接失败 / Nacos 无可用实例等基础设施错误
                 .onErrorResume(e -> Mono.just(unavailable()));
@@ -87,20 +74,7 @@ public class AuthController {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::platformError)
                 .bodyToMono(MAP_TYPE)
-                .map(user -> {
-                    // principal 用 mobile（唯一登录标识），TokenStore 记录 token -> (userId, mobile)
-                    String mobile = user.get("mobile") == null
-                            ? request.mobile() : String.valueOf(user.get("mobile"));
-                    Long userId = user.get("id") instanceof Number id ? id.longValue() : null;
-                    // 权限硬编码：userId=1 视为管理员，后续接入 DB 角色后替换
-                    List<String> permissions = userId != null && userId == 1L
-                            ? List.of("user", "admin") : List.of("user");
-                    String token = tokenStore.create(userId, mobile, permissions);
-                    Map<String, Object> body = new LinkedHashMap<>();
-                    body.put("token", token);
-                    body.put("user", user);
-                    return ResponseEntity.ok(body);
-                })
+                .map(user -> issueToken(user, request.mobile()))
                 .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
                 // 连接失败 / Nacos 无可用实例等基础设施错误
                 .onErrorResume(e -> Mono.just(unavailable()));
@@ -115,9 +89,28 @@ public class AuthController {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::platformError)
                 .bodyToMono(MAP_TYPE)
-                .map(ResponseEntity::ok) // 200 + 用户信息，原样透传
+                // 注册成功即自动登录：签发 token，返回 {token, user}，与登录接口同构
+                .map(user -> issueToken(user, mobile))
                 .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
                 .onErrorResume(e -> Mono.just(unavailable()));
+    }
+
+    /**
+     * 签发 token 并组装 {token, user} 响应（登录/注册成功共用）。
+     * principal 用 mobile（唯一登录标识），TokenStore 记录 token -> (userId, mobile)。
+     */
+    private ResponseEntity<Map<String, Object>> issueToken(Map<String, Object> user, String fallbackMobile) {
+        String mobile = user.get("mobile") == null
+                ? fallbackMobile : String.valueOf(user.get("mobile"));
+        Long userId = user.get("id") instanceof Number id ? id.longValue() : null;
+        // 权限硬编码：userId=1 视为管理员，后续接入 DB 角色后替换
+        List<String> permissions = userId != null && userId == 1L
+                ? List.of("user", "admin") : List.of("user");
+        String token = tokenStore.create(userId, mobile, permissions);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("token", token);
+        body.put("user", user);
+        return ResponseEntity.ok(body);
     }
 
     /**
