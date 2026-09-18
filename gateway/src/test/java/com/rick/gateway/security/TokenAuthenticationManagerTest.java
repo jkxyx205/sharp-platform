@@ -19,7 +19,7 @@ class TokenAuthenticationManagerTest {
 
     @BeforeEach
     void setUp() {
-        tokenStore = new TokenStore();
+        tokenStore = new InMemoryTokenStore();
         manager = new TokenAuthenticationManager(new TokenUserDetailsService(tokenStore));
     }
 

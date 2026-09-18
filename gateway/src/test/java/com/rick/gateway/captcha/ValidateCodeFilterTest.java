@@ -1,6 +1,6 @@
 package com.rick.gateway.captcha;
 
-import com.rick.gateway.security.TokenStore;
+import com.rick.gateway.security.InMemoryTokenStore;
 import com.rick.gateway.security.User;
 import com.rick.sms.core.ValidateCodeSender;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +56,8 @@ class ValidateCodeFilterTest {
         store = new InMemoryValidateCodeStore();
         ValidateCodeService service =
                 new ValidateCodeService(properties, store, mock(ValidateCodeSender.class), Map.of());
-        filter = new ValidateCodeFilter(properties, service, new TokenStore(),
+
+        filter = new ValidateCodeFilter(properties, service, new InMemoryTokenStore(),
                 contextWith(Map.of("testResolver", new TestResolver())));
     }
 
@@ -191,7 +192,7 @@ class ValidateCodeFilterTest {
 
         // yml 里的 bean 名笔误在启动期（构造过滤器）即失败，并带定位信息
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> new ValidateCodeFilter(properties, service, new TokenStore(), contextWith(Map.of())));
+                () -> new ValidateCodeFilter(properties, service, new InMemoryTokenStore(), contextWith(Map.of())));
         assertTrue(e.getMessage().contains("noSuchResolver"));
         assertTrue(e.getMessage().contains("/biz/x"));
     }
