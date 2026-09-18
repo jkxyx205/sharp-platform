@@ -53,7 +53,7 @@ class ValidateCodeFilterTest {
                 rule("/biz/custom", "register", "testResolver")));
         properties.afterPropertiesSet();
 
-        store = new ValidateCodeStore();
+        store = new InMemoryValidateCodeStore();
         ValidateCodeService service =
                 new ValidateCodeService(properties, store, mock(ValidateCodeSender.class), Map.of());
         filter = new ValidateCodeFilter(properties, service, new TokenStore(),
@@ -186,7 +186,7 @@ class ValidateCodeFilterTest {
         sms.setTemplate("SMS_T");
         properties.setTypes(Map.of("register", sms));
         properties.setRules(List.of(rule("/biz/x", "register", "noSuchResolver")));
-        ValidateCodeService service = new ValidateCodeService(properties, new ValidateCodeStore(),
+        ValidateCodeService service = new ValidateCodeService(properties, new InMemoryValidateCodeStore(),
                 mock(ValidateCodeSender.class), Map.of());
 
         // yml 里的 bean 名笔误在启动期（构造过滤器）即失败，并带定位信息

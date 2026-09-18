@@ -23,4 +23,7 @@ dependencies {
 
     // 认证（登录签发 token + 校验请求头中的 token）
     implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // 验证码 Redis 存储实现（captcha.store=redis 时启用，默认仍走内存）
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }

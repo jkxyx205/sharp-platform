@@ -17,7 +17,7 @@ class ValidateCodeStoreTest {
 
     @Test
     void expiredCodeCleanedLazily() {
-        ValidateCodeStore store = new ValidateCodeStore();
+        ValidateCodeStore store = new InMemoryValidateCodeStore();
         store.put("k", new ValidateCode("123456", Instant.now().minusSeconds(1)));
         assertTrue(store.get("k").isEmpty());
         assertTrue(store.get("k").isEmpty());
@@ -25,7 +25,7 @@ class ValidateCodeStoreTest {
 
     @Test
     void consumeIsOneShot() {
-        ValidateCodeStore store = new ValidateCodeStore();
+        ValidateCodeStore store = new InMemoryValidateCodeStore();
         ValidateCode code = new ValidateCode("123456", Instant.now().plusSeconds(60));
         store.put("k", code);
         assertTrue(store.consume("k", code));

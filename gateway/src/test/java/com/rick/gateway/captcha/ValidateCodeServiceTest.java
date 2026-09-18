@@ -31,7 +31,7 @@ class ValidateCodeServiceTest {
         ValidateCodeProperties.TypeSpec image = new ValidateCodeProperties.TypeSpec();
         image.setKind(CodeKind.IMAGE);
         properties.setTypes(Map.of("register", sms, "login", image));
-        store = new ValidateCodeStore();
+        store = new InMemoryValidateCodeStore();
         sender = mock(ValidateCodeSender.class);
         service = new ValidateCodeService(properties, store, sender, Map.of());
     }
@@ -62,7 +62,7 @@ class ValidateCodeServiceTest {
         ValidateCodeProperties properties = new ValidateCodeProperties();
         properties.setExpireSeconds(300);
         properties.setTypes(Map.of("login", spec));
-        ValidateCodeService s = new ValidateCodeService(properties, new ValidateCodeStore(), sender, Map.of());
+        ValidateCodeService s = new ValidateCodeService(properties, new InMemoryValidateCodeStore(), sender, Map.of());
 
         ValidateCode code = s.sendCode("login", null, "dev-1");
         long seconds = code.expireAt().getEpochSecond() - Instant.now().getEpochSecond();
@@ -121,7 +121,7 @@ class ValidateCodeServiceTest {
         sms.setTemplate("SMS_1");
         sms.setPreHandler("testPreHandler");
         properties.setTypes(Map.of("register", sms));
-        return new ValidateCodeService(properties, new ValidateCodeStore(), sender,
+        return new ValidateCodeService(properties, new InMemoryValidateCodeStore(), sender,
                 Map.of("testPreHandler", handler));
     }
 
@@ -172,7 +172,7 @@ class ValidateCodeServiceTest {
         image.setPreHandler("testPreHandler");
         properties.setTypes(Map.of("login", image));
         AtomicReference<String> checked = new AtomicReference<>();
-        ValidateCodeService s = new ValidateCodeService(properties, new ValidateCodeStore(), sender,
+        ValidateCodeService s = new ValidateCodeService(properties, new InMemoryValidateCodeStore(), sender,
                 Map.of("testPreHandler", mobile -> {
                     checked.set(mobile);
                     return true;
@@ -191,7 +191,7 @@ class ValidateCodeServiceTest {
         sms.setTemplate("SMS_1");
         sms.setPreHandler("cegisterCodePreHandler"); // 模拟 yml 笔误
         properties.setTypes(Map.of("register", sms));
-        ValidateCodeService s = new ValidateCodeService(properties, new ValidateCodeStore(), sender, Map.of());
+        ValidateCodeService s = new ValidateCodeService(properties, new InMemoryValidateCodeStore(), sender, Map.of());
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, s::afterPropertiesSet);
         assertTrue(e.getMessage().contains("cegisterCodePreHandler"));
