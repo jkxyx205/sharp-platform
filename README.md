@@ -7,9 +7,9 @@
 ```
                         ┌─────────────────────────────────────────┐
   Browser / App ──HTTP──▶  gateway (8769, WebFlux + SCG)          │
-                        │  · TokenStore（内存 token）              │
+                        │  · TokenStore（内存 / Redis 可选）         │
                         │  · AuthenticationWebFilter（401/403 JSON）│
-                        │  · 验证码子系统（短信 / 图形码）           │
+                        │  · 验证码子系统（短信 / 图形码，内存 / Redis 可选）│
                         │  · UserHeaderGlobalFilter 注入身份头      │
                         └───────┬──────────────┬──────────────┬───┘
                        /api/site/**    /api/erp/**      /api/platform/**
@@ -25,6 +25,7 @@
 
 - 服务注册：Nacos（`127.0.0.1:8848`），Web 实例在 `WEB_GROUP`，Dubbo 实例在 `DEFAULT_GROUP`
 - 数据库：PostgreSQL，DAO 层自动按用户上下文拼接 `group_id` 实现多租户隔离
+- 存储：网关 token / 验证码默认内存存储，可切换 Redis（多实例共享、重启不丢失）
 
 ## 模块结构
 
@@ -49,6 +50,7 @@
 - Apache Dubbo 3.3.0
 - Nacos（注册中心）
 - PostgreSQL
+- Redis（可选，网关 token / 验证码存储后端）
 - Gradle 8.6（多模块，version catalog `gradle/libs.versions.toml`）
 
 ## 快速开始
@@ -59,6 +61,7 @@
 - Gradle 8.6（项目无 `gradlew` 脚本，使用系统 Gradle）
 - Nacos `127.0.0.1:8848`
 - PostgreSQL
+- Redis（仅 `token.store=redis` 或 `captcha.store=redis` 时需要）
 - mavenLocal 中的 `sharp-database`、`sharp-sms` 快照依赖
 
 ### 机密配置
@@ -94,7 +97,7 @@ gradle :gateway:test                                 # 测试
 
 ## 认证与身份链路
 
-1. **登录 / 注册**：`gateway/controller/AuthController` 委托 platform 校验凭证，token 由网关 `TokenStore`（内存 token → userId / mobile / permissions）签发；注册成功即自动登录，返回 `{token, user}`。权限暂硬编码：userId=1 → `admin`。
+1. **登录 / 注册**：`gateway/controller/AuthController` 委托 platform 校验凭证，token 由网关 `TokenStore`（token → userId / mobile / permissions）签发；注册成功即自动登录，返回 `{token, user}`。权限暂硬编码：userId=1 → `admin`。
 2. **认证过滤器**：`SecurityConfig` 手工组装 `AuthenticationWebFilter`，token 提取优先 `Authorization: Bearer`，回退 `access_token` 查询参数（兼容 SockJS/WebSocket 握手）。未认证 / 无权限返回 **JSON 401/403，不重定向**。
 3. **身份透传**：`UserHeaderGlobalFilter` 在路由转发前以覆盖写方式注入 `X-User-Id` / `X-User-Mobile`（防伪造）；下游服务由拦截器写入 `UserContextHolder`；Dubbo 链路由 `UserContextConsumerFilter` / `UserContextProviderFilter` 经 attachment 传递。数据库访问自动按上下文拼 `group_id`。
 
@@ -120,7 +123,20 @@ gradle :gateway:test                                 # 测试
 - `captcha.types.{type}.pre-handler` → `CodePreHandler`：发码前业务预检查（如 `registerCodePreHandler` 经 HTTP 查 platform `/auth/mobile_exists`，已注册抛 `PreHandlerException` → 400）
 - `captcha.rules[].mobile` → `MobileResolver#getMobile(user, queryMobile, type)`：校验期自定义手机号解析；解析顺序 resolver → token 用户上下文 → query 参数兜底
 
-流程：发送走 `SmsController` / `ImageCodeController` → `ValidateCodeService.sendCode`（内存 `ValidateCodeStore`，key = `mobile:deviceId:type` 或 `deviceId:type`）；校验走 `ValidateCodeFilter`，**下游业务返回 2xx 才消费验证码**，失败保留可重试。
+流程：发送走 `SmsController` / `ImageCodeController` → `ValidateCodeService.sendCode`（`ValidateCodeStore`，key = `mobile:deviceId:type` 或 `deviceId:type`）；校验走 `ValidateCodeFilter`，**下游业务返回 2xx 才消费验证码**，失败保留可重试。
+
+### 存储后端（内存 / Redis 可选）
+
+`TokenStore` 与 `ValidateCodeStore` 均抽象为接口，由配置 `token.store` / `captcha.store` 选择实现，两者独立：
+
+| 配置 | 取值 | 实现 | 说明 |
+| --- | --- | --- | --- |
+| `token.store` | `memory`（缺省）/ `redis` | `InMemoryTokenStore` / `RedisTokenStore` | token → userId/mobile/permissions |
+| `captcha.store` | `memory`（缺省）/ `redis` | `InMemoryValidateCodeStore` / `RedisValidateCodeStore` | 验证码内容 + 过期时间 |
+
+- 内存实现为单机默认，进程重启即丢失
+- Redis 实现以 key 自带 TTL / Hash 存储，多实例共享、重启不丢失；`captcha` 的 `consume` 用 Lua 原子比对删除，防止并发双提交与重发误删
+- Redis 连接走 Spring Boot 默认 `spring.data.redis.*` 自动配置
 
 > ⚠️ `ValidateCodeFilter` 不能注册为 Spring Bean（WebFlux 会把所有 `WebFilter` Bean 挂进全局过滤链导致重复执行），由 `SecurityConfig` 手工实例化并加在 `AUTHORIZATION` 之后，保证未认证先 401、验证码错误才是 400。
 
