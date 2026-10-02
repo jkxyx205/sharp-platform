@@ -5,6 +5,7 @@ import com.rick.gateway.captcha.ValidateCodeProperties;
 import com.rick.gateway.captcha.ValidateCodeService;
 import com.rick.gateway.security.ApiTokenAuthentication;
 import com.rick.gateway.security.TokenAuthenticationManager;
+import com.rick.gateway.security.TokenProperties;
 import com.rick.gateway.security.TokenResolver;
 import com.rick.gateway.security.TokenStore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,7 +33,7 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableWebFluxSecurity
-@EnableConfigurationProperties(ValidateCodeProperties.class)
+@EnableConfigurationProperties({ValidateCodeProperties.class, TokenProperties.class})
 public class SecurityConfig {
 
     @Bean

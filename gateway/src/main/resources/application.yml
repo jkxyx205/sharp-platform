@@ -54,6 +54,10 @@ spring:
 server:
   port: 8769
 
+# token 会话：滑动续期，自最近一次活跃起 7 天无使用即过期
+token:
+  ttl: 7d
+
 dubbo:
   registry:
     address: nacos://127.0.0.1:8848

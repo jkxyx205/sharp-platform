@@ -169,7 +169,7 @@ public class ValidateCodeFilter implements WebFilter {
                 .mapNotNull(context -> context.getAuthentication() == null
                         ? null : context.getAuthentication().getCredentials())
                 .ofType(String.class)
-                .flatMap(token -> Mono.justOrEmpty(tokenStore.findUserInfo(token)))
+                .flatMap(tokenStore::findUserInfo)
                 .map(info -> new User(info.userId(), info.mobile()));
     }
 

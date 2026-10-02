@@ -69,7 +69,7 @@ class ValidateCodeIntegrationTest {
 
     /** 直接造 token 绕过登录（用户 mobile 固定 13800000000） */
     private String bearer() {
-        return "Bearer " + tokenStore.create(1L, "13800000000", List.of("user"));
+        return "Bearer " + tokenStore.create(1L, "13800000000", List.of("user")).block();
     }
 
     @Test

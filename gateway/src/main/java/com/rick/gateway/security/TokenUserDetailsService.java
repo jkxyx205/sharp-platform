@@ -23,7 +23,7 @@ public class TokenUserDetailsService implements ReactiveUserDetailsService {
 
     @Override
     public Mono<UserDetails> findByUsername(String token) {
-        return Mono.justOrEmpty(tokenStore.findUserInfo(token))
+        return tokenStore.findUserInfo(token)
                 .map(info -> User.withUsername(info.mobile())
                         // token 认证不校验密码，占位空串（builder 要求非 null）
                         .password("")

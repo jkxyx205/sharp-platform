@@ -19,13 +19,13 @@ class TokenAuthenticationManagerTest {
 
     @BeforeEach
     void setUp() {
-        tokenStore = new InMemoryTokenStore();
+        tokenStore = new InMemoryTokenStore(new TokenProperties());
         manager = new TokenAuthenticationManager(new TokenUserDetailsService(tokenStore));
     }
 
     @Test
     void validTokenGetsStoredPermissionsAsAuthorities() {
-        String token = tokenStore.create(1L, "13800000000", List.of("user", "admin"));
+        String token = tokenStore.create(1L, "13800000000", List.of("user", "admin")).block();
 
         Authentication auth = manager.authenticate(new ApiTokenAuthentication(token)).block();
 
@@ -46,8 +46,8 @@ class TokenAuthenticationManagerTest {
 
     @Test
     void removedTokenRejected() {
-        String token = tokenStore.create(2L, "13900000000", List.of("user"));
-        tokenStore.remove(token);
+        String token = tokenStore.create(2L, "13900000000", List.of("user")).block();
+        tokenStore.remove(token).block();
         assertThrows(BadCredentialsException.class,
                 () -> manager.authenticate(new ApiTokenAuthentication(token)).block());
     }

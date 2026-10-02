@@ -14,6 +14,9 @@ import reactor.core.publisher.Mono;
  * 认证通过后，把 token 中的用户身份以请求头透传给下游服务；
  * 下游拦截器读取后放入用户上下文（见 platform UserContextHolder）。
  * 请求头用 set 覆盖写，防止客户端伪造。
+ * <p>
+ * TokenStore 为响应式接口（Redis 实现非阻塞），通过 flatMap 接入响应式链，
+ * 避免 token 查询阻塞 Netty 事件循环。
  */
 @Component
 public class UserHeaderGlobalFilter implements GlobalFilter, Ordered {
@@ -34,21 +37,22 @@ public class UserHeaderGlobalFilter implements GlobalFilter, Ordered {
         if (token == null) {
             return chain.filter(exchange);
         }
-        TokenStore.UserInfo userInfo = tokenStore.findUserInfo(token).orElse(null);
-        if (userInfo == null) {
-            return chain.filter(exchange);
-        }
-        ServerHttpRequest request = exchange.getRequest().mutate()
-                .headers(headers -> {
-                    if (userInfo.userId() != null) {
-                        headers.set(HEADER_USER_ID, String.valueOf(userInfo.userId()));
-                    }
-                    if (userInfo.mobile() != null) {
-                        headers.set(HEADER_USER_MOBILE, userInfo.mobile());
-                    }
+        return tokenStore.findUserInfo(token)
+                .flatMap(userInfo -> {
+                    ServerHttpRequest request = exchange.getRequest().mutate()
+                            .headers(headers -> {
+                                if (userInfo.userId() != null) {
+                                    headers.set(HEADER_USER_ID, String.valueOf(userInfo.userId()));
+                                }
+                                if (userInfo.mobile() != null) {
+                                    headers.set(HEADER_USER_MOBILE, userInfo.mobile());
+                                }
+                            })
+                            .build();
+                    return chain.filter(exchange.mutate().request(request).build());
                 })
-                .build();
-        return chain.filter(exchange.mutate().request(request).build());
+                // token 不存在/已过期：不注入身份头，原样转发（认证过滤器已负责 401）
+                .switchIfEmpty(Mono.defer(() -> chain.filter(exchange)));
     }
 
     @Override

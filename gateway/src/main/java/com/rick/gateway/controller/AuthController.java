@@ -14,7 +14,6 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +58,7 @@ public class AuthController {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::platformError)
                 .bodyToMono(MAP_TYPE)
-                .map(user -> issueToken(user, request.mobile()))
+                .flatMap(user -> issueToken(user, request.mobile()))
                 .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
                 // 连接失败 / Nacos 无可用实例等基础设施错误
                 .onErrorResume(e -> Mono.just(unavailable()));
@@ -74,7 +73,7 @@ public class AuthController {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::platformError)
                 .bodyToMono(MAP_TYPE)
-                .map(user -> issueToken(user, request.mobile()))
+                .flatMap(user -> issueToken(user, request.mobile()))
                 .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
                 // 连接失败 / Nacos 无可用实例等基础设施错误
                 .onErrorResume(e -> Mono.just(unavailable()));
@@ -90,7 +89,7 @@ public class AuthController {
                 .onStatus(HttpStatusCode::isError, this::platformError)
                 .bodyToMono(MAP_TYPE)
                 // 注册成功即自动登录：签发 token，返回 {token, user}，与登录接口同构
-                .map(user -> issueToken(user, mobile))
+                .flatMap(user -> issueToken(user, mobile))
                 .onErrorResume(PlatformErrorException.class, e -> Mono.just(e.toResponse()))
                 .onErrorResume(e -> Mono.just(unavailable()));
     }
@@ -99,32 +98,29 @@ public class AuthController {
      * 签发 token 并组装 {token, user} 响应（登录/注册成功共用）。
      * principal 用 mobile（唯一登录标识），TokenStore 记录 token -> (userId, mobile)。
      */
-    private ResponseEntity<Map<String, Object>> issueToken(Map<String, Object> user, String fallbackMobile) {
+    private Mono<ResponseEntity<Map<String, Object>>> issueToken(Map<String, Object> user, String fallbackMobile) {
         String mobile = user.get("mobile") == null
                 ? fallbackMobile : String.valueOf(user.get("mobile"));
         Long userId = user.get("id") instanceof Number id ? id.longValue() : null;
         // 权限硬编码：userId=1 视为管理员，后续接入 DB 角色后替换
         List<String> permissions = userId != null && userId == 1L
                 ? List.of("user", "admin") : List.of("user");
-        String token = tokenStore.create(userId, mobile, permissions);
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("token", token);
-        body.put("user", user);
-        return ResponseEntity.ok(body);
+        return tokenStore.create(userId, mobile, permissions).map(token -> {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("token", token);
+            body.put("user", user);
+            return ResponseEntity.<Map<String, Object>>ok(body);
+        });
     }
 
     /**
-     * 退出登录：移除网关内存中的 token，使其立即失效。
-     * 未列入 SecurityConfig 的 permitAll，因此需携带有效 token 才能到达此处。
+     * 退出登录：移除 token 使其立即失效。需携带有效 token 才能到达此处（未列入 permitAll）。
      */
     @PostMapping("/logout")
-    public Mono<ResponseEntity<Map<String, Object>>> logout(ServerHttpRequest request, Principal principal) {
-        System.out.println(principal);
+    public Mono<ResponseEntity<Map<String, Object>>> logout(ServerHttpRequest request) {
         String token = TokenResolver.resolveToken(request);
-        if (token != null) {
-            tokenStore.remove(token);
-        }
-        return Mono.just(ResponseEntity.ok(Map.of("code", "200", "message", "已退出登录")));
+        return (token == null ? Mono.<Void>empty() : tokenStore.remove(token))
+                .thenReturn(ResponseEntity.ok(Map.of("code", "200", "message", "已退出登录")));
     }
 
     /** platform 返回非 2xx：连同状态码与 JSON body 包装成异常，由 onErrorResume 透传 */
