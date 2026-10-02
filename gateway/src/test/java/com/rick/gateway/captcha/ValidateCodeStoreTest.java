@@ -18,18 +18,18 @@ class ValidateCodeStoreTest {
     @Test
     void expiredCodeCleanedLazily() {
         ValidateCodeStore store = new InMemoryValidateCodeStore();
-        store.put("k", new ValidateCode("123456", Instant.now().minusSeconds(1)));
-        assertTrue(store.get("k").isEmpty());
-        assertTrue(store.get("k").isEmpty());
+        store.put("k", new ValidateCode("123456", Instant.now().minusSeconds(1))).block();
+        assertTrue(store.get("k").block() == null);
+        assertTrue(store.get("k").block() == null);
     }
 
     @Test
     void consumeIsOneShot() {
         ValidateCodeStore store = new InMemoryValidateCodeStore();
         ValidateCode code = new ValidateCode("123456", Instant.now().plusSeconds(60));
-        store.put("k", code);
-        assertTrue(store.consume("k", code));
-        assertFalse(store.consume("k", code));
-        assertTrue(store.get("k").isEmpty());
+        store.put("k", code).block();
+        assertTrue(store.consume("k", code).block());
+        assertFalse(store.consume("k", code).block());
+        assertTrue(store.get("k").block() == null);
     }
 }

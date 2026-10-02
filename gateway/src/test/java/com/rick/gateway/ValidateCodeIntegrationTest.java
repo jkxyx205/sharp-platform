@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -80,7 +81,7 @@ class ValidateCodeIntegrationTest {
                 .expectHeader().cacheControl(CacheControl.noStore())
                 .expectBody(byte[].class).value(bytes -> assertThat(bytes.length).isGreaterThan(0));
 
-        String code = codeStore.get("dev-img:login").orElseThrow().content();
+        String code = Optional.ofNullable(codeStore.get("dev-img:login").block()).orElseThrow().content();
 
         // 正确验证码放行
         client.get().uri(b -> b.path("/test/image-flow").queryParam("code", code).build())
@@ -104,7 +105,7 @@ class ValidateCodeIntegrationTest {
         ArgumentCaptor<Map<String, String>> params = ArgumentCaptor.captor();
         verify(sender).send(eq("13800000000"), eq("xx科技"), eq("SMS_23320004"), params.capture());
         String sent = params.getValue().get("code");
-        String stored = codeStore.get("13800000000:dev-sms:register").orElseThrow().content();
+        String stored = Optional.ofNullable(codeStore.get("13800000000:dev-sms:register").block()).orElseThrow().content();
         assertThat(sent).isEqualTo(stored).matches("\\d{6}");
 
         // 认证用户（UserContext mobile 与发送号码一致）携带正确验证码放行
@@ -132,7 +133,7 @@ class ValidateCodeIntegrationTest {
     void mismatchIsRetryable() {
         client.get().uri("/image/login").header("deviceId", "dev-m").exchange()
                 .expectStatus().isOk();
-        String code = codeStore.get("dev-m:login").orElseThrow().content();
+        String code = Optional.ofNullable(codeStore.get("dev-m:login").block()).orElseThrow().content();
 
         client.get().uri(b -> b.path("/test/image-flow").queryParam("code", code + "x").build())
                 .header("deviceId", "dev-m").header(HttpHeaders.AUTHORIZATION, bearer())
@@ -146,7 +147,7 @@ class ValidateCodeIntegrationTest {
 
     @Test
     void expiredCodeRejected() {
-        codeStore.put("dev-e:login", new ValidateCode("ABCD", Instant.now().minusSeconds(1)));
+        codeStore.put("dev-e:login", new ValidateCode("ABCD", Instant.now().minusSeconds(1))).block();
         client.get().uri(b -> b.path("/test/image-flow").queryParam("code", "ABCD").build())
                 .header("deviceId", "dev-e").header(HttpHeaders.AUTHORIZATION, bearer())
                 .exchange().expectStatus().isBadRequest()

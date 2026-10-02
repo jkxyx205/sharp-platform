@@ -76,6 +76,12 @@ ali:
 captcha:
   expire-seconds: 300
   sign-name: ${SIGN_NAME}
+  # 发送频率限制：同手机号 60s 内仅一次，按手机号/设备/IP 各设日上限
+  rate-limit:
+    interval: 60s
+    mobile-daily-limit: 10
+    device-daily-limit: 20
+    ip-daily-limit: 50
   image:
     length: 4
     width: 120

@@ -128,19 +128,21 @@ public class ValidateCodeFilter implements WebFilter {
         } else {
             mobile = null;
         }
-        ValidateCodeService.VerifyResult result =
-                service.verify(rule.spec().getKind(), rule.type(), mobile, deviceId, code);
-        return switch (result) {
-            // 先放行，下游业务成功（2xx）才消费验证码；业务失败保留，可用同一验证码重试
-            case OK -> chain.filter(exchange).then(Mono.fromRunnable(() -> {
-                HttpStatusCode status = exchange.getResponse().getStatusCode();
-                if (status != null && status.is2xxSuccessful()) {
-                    service.consume(rule.spec().getKind(), rule.type(), mobile, deviceId);
-                }
-            }));
-            case NOT_FOUND_OR_EXPIRED -> reject(exchange, "验证码不存在或已失效");
-            case MISMATCH -> reject(exchange, "验证码错误");
-        };
+        final CodeKind kind = rule.spec().getKind();
+        final String type = rule.type();
+        return service.verify(kind, type, mobile, deviceId, code)
+                .flatMap(result -> switch (result) {
+                    // 先放行，下游业务成功（2xx）才消费验证码；业务失败保留，可用同一验证码重试
+                    case OK -> chain.filter(exchange).then(Mono.defer(() -> {
+                        HttpStatusCode status = exchange.getResponse().getStatusCode();
+                        if (status != null && status.is2xxSuccessful()) {
+                            return service.consume(kind, type, mobile, deviceId);
+                        }
+                        return Mono.empty();
+                    }));
+                    case NOT_FOUND_OR_EXPIRED -> reject(exchange, "验证码不存在或已失效");
+                    case MISMATCH -> reject(exchange, "验证码错误");
+                });
     }
 
     /**

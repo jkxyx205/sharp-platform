@@ -36,6 +36,9 @@ class ValidateCodeFilterTest {
     private ValidateCodeStore store;
     private ValidateCodeFilter filter;
 
+    /** no-op 限流器：过滤器测试聚焦校验/消费逻辑 */
+    private static final CodeRateLimiter NOOP_LIMITER = (spec, m, d, ip) -> reactor.core.publisher.Mono.empty();
+
     @BeforeEach
     void setUp() throws Exception {
         ValidateCodeProperties properties = new ValidateCodeProperties();
@@ -55,9 +58,9 @@ class ValidateCodeFilterTest {
 
         store = new InMemoryValidateCodeStore();
         ValidateCodeService service =
-                new ValidateCodeService(properties, store, mock(ValidateCodeSender.class), Map.of());
+                new ValidateCodeService(properties, store, mock(ValidateCodeSender.class), NOOP_LIMITER, Map.of());
 
-        filter = new ValidateCodeFilter(properties, service, new InMemoryTokenStore(),
+        filter = new ValidateCodeFilter(properties, service, new InMemoryTokenStore(new com.rick.gateway.security.TokenProperties()),
                 contextWith(Map.of("testResolver", new TestResolver())));
     }
 
@@ -122,7 +125,7 @@ class ValidateCodeFilterTest {
 
     @Test
     void smsQueryMobileFallback() {
-        store.put("13800000000:dev-1:register", code("123456"));
+        store.put("13800000000:dev-1:register", code("123456")).block();
         MockServerWebExchange exchange =
                 run("/biz/register?mobile=13800000000&code=123456", "deviceId", "dev-1");
         assertEquals(HttpStatus.OK, exchange.getResponse().getStatusCode());
@@ -130,7 +133,7 @@ class ValidateCodeFilterTest {
 
     @Test
     void verifiedCodeIsOneShot() {
-        store.put("13800000000:dev-1:register", code("123456"));
+        store.put("13800000000:dev-1:register", code("123456")).block();
         assertEquals(HttpStatus.OK,
                 run("/biz/register?mobile=13800000000&code=123456", "deviceId", "dev-1").getResponse().getStatusCode());
         MockServerWebExchange second = run("/biz/register?mobile=13800000000&code=123456", "deviceId", "dev-1");
@@ -140,7 +143,7 @@ class ValidateCodeFilterTest {
 
     @Test
     void businessFailureKeepsCodeRetryable() {
-        store.put("13800000000:dev-1:register", code("123456"));
+        store.put("13800000000:dev-1:register", code("123456")).block();
         // 验证码正确但下游业务失败（409）：不消费验证码
         assertEquals(HttpStatus.CONFLICT,
                 runWithStatus("/biz/register?mobile=13800000000&code=123456", HttpStatus.CONFLICT,
@@ -155,7 +158,7 @@ class ValidateCodeFilterTest {
 
     @Test
     void mismatchIsRetryable() {
-        store.put("13800000000:dev-1:register", code("123456"));
+        store.put("13800000000:dev-1:register", code("123456")).block();
         MockServerWebExchange wrong = run("/biz/register?mobile=13800000000&code=xxxxxx", "deviceId", "dev-1");
         assertEquals(HttpStatus.BAD_REQUEST, wrong.getResponse().getStatusCode());
         assertBody(wrong, "验证码错误");
@@ -166,14 +169,14 @@ class ValidateCodeFilterTest {
 
     @Test
     void imageCodeCaseInsensitive() {
-        store.put("dev-1:login", code("AbCd"));
+        store.put("dev-1:login", code("AbCd")).block();
         assertEquals(HttpStatus.OK,
                 run("/biz/login?code=abcd", "deviceId", "dev-1").getResponse().getStatusCode());
     }
 
     @Test
     void customResolverSuppliesMobile() {
-        store.put("17799999999:dev-1:register", code("123456"));
+        store.put("17799999999:dev-1:register", code("123456")).block();
         // 不传 mobile，由自定义 resolver Bean 解析
         assertEquals(HttpStatus.OK,
                 run("/biz/custom?code=123456", "deviceId", "dev-1").getResponse().getStatusCode());
@@ -188,18 +191,18 @@ class ValidateCodeFilterTest {
         properties.setTypes(Map.of("register", sms));
         properties.setRules(List.of(rule("/biz/x", "register", "noSuchResolver")));
         ValidateCodeService service = new ValidateCodeService(properties, new InMemoryValidateCodeStore(),
-                mock(ValidateCodeSender.class), Map.of());
+                mock(ValidateCodeSender.class), NOOP_LIMITER, Map.of());
 
         // yml 里的 bean 名笔误在启动期（构造过滤器）即失败，并带定位信息
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> new ValidateCodeFilter(properties, service, new InMemoryTokenStore(), contextWith(Map.of())));
+                () -> new ValidateCodeFilter(properties, service, new InMemoryTokenStore(new com.rick.gateway.security.TokenProperties()), contextWith(Map.of())));
         assertTrue(e.getMessage().contains("noSuchResolver"));
         assertTrue(e.getMessage().contains("/biz/x"));
     }
 
     @Test
     void codeHeaderFallback() {
-        store.put("dev-1:login", code("AbCd"));
+        store.put("dev-1:login", code("AbCd")).block();
         assertEquals(HttpStatus.OK,
                 run("/biz/login", "deviceId", "dev-1", "code", "AbCd").getResponse().getStatusCode());
     }

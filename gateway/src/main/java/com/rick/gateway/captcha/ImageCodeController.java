@@ -3,8 +3,10 @@ package com.rick.gateway.captcha;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -37,44 +39,53 @@ public class ImageCodeController {
     }
 
     @GetMapping("login")
-    public Mono<ResponseEntity<Resource>> loginImage(@RequestHeader(value = "deviceId", required = false) String deviceId) {
-        return image("login", deviceId);
+    public Mono<ResponseEntity<Resource>> loginImage(@RequestHeader(value = "deviceId", required = false) String deviceId,
+                                                      ServerHttpRequest request) {
+        return image("login", deviceId, request);
     }
 
     @GetMapping
     public Mono<ResponseEntity<Resource>> image(@RequestParam String type,
-                                                @RequestHeader(value = "deviceId", required = false) String deviceId) {
-        // 渲染为 CPU 阻塞操作，放到 boundedElastic，勿占事件循环
-        return Mono.fromCallable(() -> {
-                    if (!StringUtils.hasText(deviceId)) {
-                        throw new IllegalArgumentException("缺少设备标识 deviceId");
-                    }
-                    if (service.typeSpec(type).getKind() != CodeKind.IMAGE) {
-                        throw new IllegalArgumentException("type 不是图片验证码: " + type);
-                    }
-                    ValidateCode code = service.sendCode(type, null, deviceId);
-                    return ResponseEntity.ok()
-                            .contentType(MediaType.IMAGE_PNG)
-                            .cacheControl(CacheControl.noStore())
-                            .body((Resource) new ByteArrayResource(render(code.content())));
-                })
-                .subscribeOn(Schedulers.boundedElastic())
+                                                @RequestHeader(value = "deviceId", required = false) String deviceId,
+                                                ServerHttpRequest request) {
+        // 校验同步先行；渲染为 CPU 阻塞操作，sendCode 链路在 service 内调度 boundedElastic，
+        // 渲染在最终 map 中执行（CPU 密集，仍需调度，见下）
+        if (!StringUtils.hasText(deviceId)) {
+            return Mono.just(error(new IllegalArgumentException("缺少设备标识 deviceId")));
+        }
+        if (service.typeSpec(type).getKind() != CodeKind.IMAGE) {
+            return Mono.just(error(new IllegalArgumentException("type 不是图片验证码: " + type)));
+        }
+        String ip = ClientIpResolver.resolve(request);
+        return service.sendCode(type, null, deviceId, ip)
+                // 渲染为 CPU 阻塞操作，调度到 boundedElastic，勿占事件循环
+                .flatMap(code -> Mono.fromCallable(() -> renderPng(code.content()))
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .map(png -> ResponseEntity.ok()
+                                .contentType(MediaType.IMAGE_PNG)
+                                .cacheControl(CacheControl.noStore())
+                                .<Resource>body(new ByteArrayResource(png))))
+                .onErrorResume(RateLimitException.class, e -> Mono.just(error(HttpStatus.TOO_MANY_REQUESTS, e.getMessage())))
                 .onErrorResume(e -> Mono.just(error(e)));
     }
 
     private static ResponseEntity<Resource> error(Throwable e) {
         int status = e instanceof IllegalArgumentException ? 400 : 500;
         String message = e instanceof IllegalArgumentException ? e.getMessage() : "图片验证码生成失败";
+        return error(HttpStatus.valueOf(status), message);
+    }
+
+    private static ResponseEntity<Resource> error(HttpStatus status, String message) {
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new ByteArrayResource(
-                        CaptchaJson.error(status, message).getBytes(StandardCharsets.UTF_8)));
+                        CaptchaJson.error(status.value(), message).getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
      * 把验证码文本渲染成 PNG：逐字符随机颜色/旋转 + 干扰线。
      */
-    private byte[] render(String content) throws IOException {
+    private byte[] renderPng(String content) throws IOException {
         int width = properties.getImage().getWidth();
         int height = properties.getImage().getHeight();
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);

@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,9 @@ public class ValidateCodeProperties implements InitializingBean {
 
     private Sms sms = new Sms();
 
+    /** 发送频率限制 */
+    private RateLimit rateLimit = new RateLimit();
+
     /** type -> 验证码定义 */
     private Map<String, TypeSpec> types = new LinkedHashMap<>();
 
@@ -48,6 +52,22 @@ public class ValidateCodeProperties implements InitializingBean {
     public static class Sms {
         private int length = 6;
     }
+
+    /**
+     * 发送频率限制：同手机号 60s 内仅一次，按手机号/设备/IP 各设日上限。
+     */
+    @Data
+    public static class RateLimit {
+        /** 同手机号两次发送的最小间隔（仅短信） */
+        private Duration interval = Duration.ofSeconds(60);
+        /** 单手机号每日发送上限 */
+        private int mobileDailyLimit = 10;
+        /** 单设备每日发送上限 */
+        private int deviceDailyLimit = 20;
+        /** 单 IP 每日发送上限 */
+        private int ipDailyLimit = 50;
+    }
+
 
     @Data
     public static class TypeSpec {

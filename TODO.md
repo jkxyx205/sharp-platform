@@ -4,17 +4,20 @@
 
 ## P0 安全与正确性（上线前必做）
 
-- [ ] **Token 无 TTL / 自动过期**
+- [x] **Token 无 TTL / 自动过期**
   现状：`RedisTokenStore` 不设 TTL，token 永驻 Redis；内存版靠重启兜底，Redis 版会无限累积。`AuthController.logout` 也只删一个 token。
   方向：`create` 写入后 `redis.expire(token, Duration)` 设会话超时；接入「滑动续期」或「活跃时自动续期」策略；明确单设备/多设备并发登录策略。
+  落地：新增 `TokenProperties.ttl`（默认 7d，yml 显式 `token.ttl`）；`create` 写入即设 TTL，`findUserInfo` 命中刷新 TTL（滑动续期，多设备并存）；`AuthController.logout` 顺手移除 `System.out.println` 调试残留。
 
-- [ ] **Redis 阻塞调用落在 Netty 事件循环**
+- [x] **Redis 阻塞调用落在 Netty 事件循环**
   现状：`TokenUserDetailsService.findByUsername`（`Mono.justOrEmpty(...)` 装配阶段同步求值）、`UserHeaderGlobalFilter`、`ValidateCodeFilter` 在响应式链里同步调用 `TokenStore`/`ValidateCodeStore`，Redis 实现下每次请求把阻塞 GET/DELETE 放到事件循环线程。
   方向：Redis 实现改用 `ReactiveRedisTemplate`，接口方法返回 `Mono`/`Flux`；或至少把阻塞调用包到 `Schedulers.boundedElastic()`。这是改 Redis 存储时埋下的债，需要先确认接口签名是否 reactive 化。
+  落地：`TokenStore`/`ValidateCodeStore` 接口全面 reactive 化（方法返回 `Mono`）；Redis 实现切 `ReactiveStringRedisTemplate`；`TokenUserDetailsService`/`UserHeaderGlobalFilter`/`ValidateCodeFilter` 改 `flatMap` 接入；`ValidateCodeService.sendCode/verify/consume` 返回 `Mono`，阻塞预检查与短信发送 `subscribeOn(boundedElastic)`。
 
-- [ ] **验证码 / 短信发送无频率限制（防刷）**
+- [x] **验证码 / 短信发送无频率限制（防刷）**
   现状：`ValidateCodeService.sendCode` 无「同手机号 60s 内仅一次」「同 IP/设备日发送上限」逻辑；`/sms/{mobile}/register` 直接暴露在 permitAll，可被刷短信轰炸。
   方向：在 `sendCode` 前加频率校验（内存版用 Caffeine 滑动窗口，Redis 版用 `INCR + EXPIRE` 做分布式计数器）；按 mobile、deviceId、客户端 IP 三维度限流。
+  落地：新增 `CodeRateLimiter` 接口 + `InMemoryRateLimiter`（手写 `ConcurrentHashMap` 滑动窗口，无新依赖）/`RedisRateLimiter`（Lua `INCR+EXPIRE` 原子计数）；`sendCode` 增 `ip` 参数并前置限流（mobile 仅短信、device/ip 通用）；controllers 经 `ClientIpResolver` 提取 IP，超限返回 429；配置 `captcha.rate-limit.*`。
 
 - [ ] **身份头内部链路信任问题**
   现状：`UserHeaderGlobalFilter` 用 `set` 覆盖写 `X-User-Id`/`X-User-Mobile` 防客户端伪造，但下游服务无条件信任这些头。若下游服务端口直接可达（绕过网关），或网关→下游链路上有其他注入点，身份可被伪造。
