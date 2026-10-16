@@ -12,6 +12,7 @@ import jakarta.annotation.Resource;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,12 +46,18 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
     @GetMapping("current")
     public String getCurrentData() {
         Plant plant = plantService.selectByCode("C0013").get();
-        return "Hello data" + plant.getDescription();
+        return "Hello data: " + plant.getDescription();
     }
 
     @GetMapping("dubbo")
     public String getRemoteData() {
         return demoService.sayHello("hello");
+    }
+
+    @PreAuthorize("hasAuthority('plant:current_data2')")
+    @GetMapping("permission")
+    public String helloPermission() {
+        return "Hello Permission";
     }
 
 }

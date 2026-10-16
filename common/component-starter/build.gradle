@@ -31,4 +31,7 @@ dependencies {
 
     // nacos 服务注册发现（Web 实例，供网关 lb:// 路由；与 Dubbo 实例用 group 隔离）
     api 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
+
+    // 权限管理
+    api 'org.springframework.boot:spring-boot-starter-security'
 }
