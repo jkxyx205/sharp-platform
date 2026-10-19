@@ -1,14 +1,19 @@
 package com.rick.platform.module.user.service;
 
 import com.rick.db.plugin.BaseServiceImpl;
+import com.rick.db.repository.model.BaseEntityInfo;
+import com.rick.db.repository.model.BaseEntityInfoGetter;
 import com.rick.platform.module.user.dao.UserDAO;
 import com.rick.platform.module.user.entity.User;
 import com.rick.platform.module.user.exception.AuthException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class UserService extends BaseServiceImpl<UserDAO, User, Long> {
@@ -67,5 +72,43 @@ public class UserService extends BaseServiceImpl<UserDAO, User, Long> {
             throw new AuthException(HttpStatus.FORBIDDEN, "账号已锁定，请联系管理员");
         }
         return user;
+    }
+
+    /**
+     * 根据用户 id， fill Nickname
+     * @param baseEntityInfoGetter
+     */
+    public void fillBaseEntityInfoGetterWithName(BaseEntityInfoGetter baseEntityInfoGetter) {
+        fillBaseEntityInfoGetterWithName(Set.of(baseEntityInfoGetter));
+    }
+
+    public void fillBaseEntityInfoGetterWithName(Collection<BaseEntityInfoGetter> baseEntityInfoGetterCollection) {
+        fillBaseEntityInfoWithName(baseEntityInfoGetterCollection.stream().map(BaseEntityInfoGetter::getBaseEntityInfo).collect(Collectors.toSet()));
+    }
+
+    public void fillBaseEntityInfoWithName(BaseEntityInfo baseEntityInfo) {
+       fillBaseEntityInfoWithName(Set.of(baseEntityInfo));
+    }
+
+    public void fillBaseEntityInfoWithName(Collection<BaseEntityInfo> baseEntityInfoCollection) {
+        if (CollectionUtils.isEmpty(baseEntityInfoCollection)) {
+            return;
+        }
+
+        Set<Long> collectIds = baseEntityInfoCollection.stream().flatMap(baseEntityInfo -> Stream.of(baseEntityInfo.getCreateBy(), baseEntityInfo.getUpdateBy())).collect(Collectors.toSet());
+        Map<Long, String> idNicknameMap = getIdNicknameMap(collectIds);
+
+        for (BaseEntityInfo baseEntityInfo : baseEntityInfoCollection) {
+            baseEntityInfo.setCreateByName(idNicknameMap.get(baseEntityInfo.getCreateBy()));
+            baseEntityInfo.setUpdateByName(idNicknameMap.get(baseEntityInfo.getUpdateBy()));
+        }
+    }
+
+    public Map<Long, String> getIdNicknameMap(Collection<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyMap();
+        }
+
+        return selectForKeyValue("id, nickname", "id IN (:ids)", Map.of("ids", ids));
     }
 }
