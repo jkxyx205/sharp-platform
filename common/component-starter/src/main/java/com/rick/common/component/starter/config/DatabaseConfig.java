@@ -58,24 +58,29 @@ public class DatabaseConfig {
                 return super.update(tableName, columnsCondition, condition + " AND group_id = ?", ArrayUtils.addAll(args, getGroupId()));
             }
 
+            @Override
             public <E> List<E> select(Class<E> clazz, String sql, Object... args) {
                 return super.select(clazz, this.addIsDeletedCondition(sql, () -> "AND group_id = ?"), ArrayUtils.addAll(args, getGroupId()));
             }
 
+            @Override
             public <E> List<E> select(String sql, Map<String, Object> paramMap, JdbcTemplateCallback<E> jdbcTemplateCallback) {
                 paramMap = new HashMap<>(paramMap);
                 paramMap.put("group_id", getGroupId());
                 return super.select(this.addIsDeletedCondition(sql, () -> "AND group_id = :group_id"), paramMap, jdbcTemplateCallback);
             }
 
+            @Override
             public List<Map<String, Object>> select(String sql, Object... args) {
                 return super.select(this.addIsDeletedCondition(sql, () -> "AND group_id = ?"), ArrayUtils.addAll(args, getGroupId()));
             }
 
+            @Override
+            public boolean exists(String sql, Object... args) {
+                return super.exists(this.addIsDeletedCondition(sql, () -> "AND group_id = ?"), args);
+            }
         };
     }
-
-
 
     @Bean
     public InsertUpdateCallback insertCallback() {
