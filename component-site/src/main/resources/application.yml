@@ -7,6 +7,13 @@ spring:
     import:
       - optional:classpath:.env.postgres.properties
 
+dict:
+  items:
+    - type: MATERIAL_TYPE
+      sql: "select code, description from mm_code_group where category_code = 'MATERIAL' and is_deleted = false"
+    - type: JudgeLevelEnum
+      map: { "A": "A(优秀入围)", "B": "B(良好)", "C": "C(一般)" }
+
 sharp:
   database:
     type: PostgreSQL

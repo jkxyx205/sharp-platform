@@ -1,6 +1,7 @@
 package com.rick.site;
 
 import com.rick.db.plugin.generator.TableGenerator;
+import com.rick.site.module.demo.entity.MyEnum;
 import com.rick.site.module.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,11 @@ public class TableGeneratorTest {
     @Test
     public void testGeneratorUserTable() {
         tableGenerator.createTable(User.class);
+    }
+
+    @Test
+    public void testGeneratorMyEnumTable() {
+        tableGenerator.createTable(MyEnum.class);
     }
 }
 
