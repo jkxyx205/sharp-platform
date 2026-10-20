@@ -54,7 +54,7 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
         return demoService.sayHello("hello");
     }
 
-    @PreAuthorize("hasAuthority('plant:current_data2')")
+    @PreAuthorize("hasAuthority('plant:current_data')")
     @GetMapping("permission")
     public String helloPermission() {
         return "Hello Permission";
