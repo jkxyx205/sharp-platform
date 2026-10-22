@@ -34,4 +34,13 @@ dependencies {
 
     // 权限管理
     api 'org.springframework.boot:spring-boot-starter-security'
+
+    api ('com.rick.generator:sharp-generator:3.0-SNAPSHOT') {
+        exclude group: 'com.rick.common', module: 'sharp-common'
+        exclude group: 'com.rick.db', module: 'sharp-database2'
+//        exclude group: 'com.rick.report', module: 'sharp-report'
+        exclude group: 'com.rick.meta', module: 'sharp-meta'
+        exclude group: 'com.rick.formflow', module: 'sharp-formflow'
+        exclude group: 'com.rick.fileupload', module: 'sharp-fileupload'
+    }
 }
