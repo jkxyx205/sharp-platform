@@ -3,6 +3,8 @@ package com.rick.site.module.user.controler;
 import com.rick.common.component.starter.controller.BaseApi;
 import com.rick.site.module.user.entity.User;
 import com.rick.site.module.user.service.UserService;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("users")
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController extends BaseApi<UserService, User, Long> {
 
     public UserController(UserService baseService) {

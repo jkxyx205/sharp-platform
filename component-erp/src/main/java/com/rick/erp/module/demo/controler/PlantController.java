@@ -19,14 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("plants")
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE) // @DubboReference 不能声明成 final
 public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
 
     // ❌ Avoid:
     // @DubboReference
     // private final DemoService demoService
     @DubboReference
-    private DemoService demoService;
+    DemoService demoService;
 
     @Resource
     PlantService plantService;
@@ -46,7 +46,9 @@ public class PlantController extends BaseCodeApi<PlantService, Plant, Long> {
     @GetMapping("current")
     public String getCurrentData() {
         Plant plant = plantService.selectByCode("C0013").get();
-        return "Hello data: " + plant.getDescription();
+        String welcome = plantService.sayHello("Lily");
+        String cat = demoService.sayHello("Cat");
+        return "Hello data: " + plant.getDescription() + ";" + welcome + ";" + cat;
     }
 
     @GetMapping("dubbo")
