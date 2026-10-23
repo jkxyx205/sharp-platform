@@ -53,21 +53,21 @@ public class ComponentConfig extends SharpWebMvcConfigurer {
         registry.addInterceptor(new HandlerInterceptor() {
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+                User user = new User();
                 String userId = request.getHeader(HEADER_USER_ID);
                 if (userId != null && !userId.isBlank()) {
-                    User user = new User();
                     user.setId(Long.parseLong(userId));
-                    user.setMobile(request.getHeader(HEADER_USER_MOBILE));
-                    // 路由统一带 {groupId} 前缀，此时映射已完成，路径变量已放入请求属性
-                    @SuppressWarnings("unchecked")
-                    Map<String, String> pathVariables = (Map<String, String>)
-                            request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
-                    String groupId = pathVariables == null ? null : pathVariables.get("groupId");
-                    if (groupId != null && !groupId.isBlank()) {
-                        user.setGroupId(Long.parseLong(groupId));
-                    }
-                    UserContextHolder.put(user);
                 }
+                user.setMobile(request.getHeader(HEADER_USER_MOBILE));
+                // 路由统一带 {groupId} 前缀，此时映射已完成，路径变量已放入请求属性
+                @SuppressWarnings("unchecked")
+                Map<String, String> pathVariables = (Map<String, String>)
+                        request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+                String groupId = pathVariables == null ? null : pathVariables.get("groupId");
+                if (groupId != null && !groupId.isBlank()) {
+                    user.setGroupId(Long.parseLong(groupId));
+                }
+                UserContextHolder.put(user);
                 return true;
             }
 

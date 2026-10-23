@@ -9,7 +9,10 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("com.rick.sms:sharp-sms:3.0-SNAPSHOT")
+    implementation("com.rick.common:sharp-common:0.0.1-SNAPSHOT")
+    implementation("com.rick.sms:sharp-sms:3.0-SNAPSHOT") {
+        exclude group: 'com.rick.common', module: 'sharp-common'
+    }
 
     // dubbo
     api 'org.apache.dubbo:dubbo-spring-boot-starter'
