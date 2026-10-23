@@ -29,7 +29,11 @@ public class WebMvcRegistrationsConfig implements WebMvcRegistrations {
                     return super.getMappingForMethod(method, handlerType);
                 }
 
-                return handlerType == BasicErrorController.class ? info : root.combine(info);
+                // springdoc 端点（/v3/api-docs、/swagger-ui.html）不加前缀：
+                // swagger-config 的分组 URL 由 springdoc.api-docs.path 拼接生成，
+                // 加了 {groupId} 前缀会导致生成的 URL 与实际映射不一致（404）
+                return handlerType == BasicErrorController.class
+                        || handlerType.getPackageName().startsWith("org.springdoc") ? info : root.combine(info);
             }
         };
     }

@@ -3,11 +3,7 @@ package com.rick.gateway.config;
 import com.rick.gateway.captcha.ValidateCodeFilter;
 import com.rick.gateway.captcha.ValidateCodeProperties;
 import com.rick.gateway.captcha.ValidateCodeService;
-import com.rick.gateway.security.ApiTokenAuthentication;
-import com.rick.gateway.security.TokenAuthenticationManager;
-import com.rick.gateway.security.TokenProperties;
-import com.rick.gateway.security.TokenResolver;
-import com.rick.gateway.security.TokenStore;
+import com.rick.gateway.security.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.config.GlobalCorsProperties;
 import org.springframework.context.ApplicationContext;
@@ -56,7 +52,11 @@ public class SecurityConfig {
 //                .cors(Customizer.withDefaults())
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/auth/login", "/auth/mobile_login", "/auth/register", "/api/platform/auth/register",
-                                "/sms/{mobile}/register", "/sms/{mobile}/mobile_login", "/image/login").permitAll()
+                                "/sms/{mobile}/register", "/sms/{mobile}/mobile_login", "/image/login",
+                                // 接口文档放行
+                                "/api/site/swagger-ui.html", "/api/site/swagger-ui/**", "/api/site/v3/api-docs/**", "/api/site/v3/api-docs/**",
+                                "/api/erp/swagger-ui.html", "/api/erp/swagger-ui/**", "/api/erp/v3/api-docs/**", "/api/erp/v3/api-docs/**",
+                                "/api/platform/swagger-ui.html", "/api/platform/swagger-ui/**", "/api/platform/v3/api-docs/**", "/api/platform/v3/api-docs/**").permitAll()
                         // 授权示例：erp 路由需要 admin 权限（登录时硬编码分配，见 AuthController）
                         .pathMatchers("/api/erp/**").hasAuthority("admin")
                         .anyExchange().authenticated())

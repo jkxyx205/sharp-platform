@@ -13,6 +13,10 @@ spring:
     gateway:
       server:
         webflux:
+          # Gateway 4.2+ 安全加固：未配置 trusted-proxies 时 XForwardedHeadersFilter 不注册，
+          # 且入站 X-Forwarded-* 会被移除。下游 springdoc 依赖 X-Forwarded-Prefix 生成
+          # 带 /api/site 前缀的 swagger URL。仅信任本机回环地址，从其他机器访问需扩展正则
+          trusted-proxies: '127\.0\.0\.1|0:0:0:0:0:0:0:1|::1'
           routes:
             - id: site
               uri: lb://site

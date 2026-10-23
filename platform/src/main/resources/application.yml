@@ -14,3 +14,6 @@ sharp:
 #    track-if-has-update: true
 server:
   port: 7003
+  # 经网关转发时接收 X-Forwarded-Prefix（/api/platform），springdoc 据此生成带前缀的
+  # swagger-config/api-docs URL；直连 7003 无该头，不受影响
+  forward-headers-strategy: framework
