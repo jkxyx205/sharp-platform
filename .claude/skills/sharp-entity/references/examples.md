@@ -122,10 +122,10 @@ public class SiteService extends BaseCodeServiceImpl<SiteDAO, Site, Long> {
 }
 ```
 
-### controler/SiteController.java
+### controller/SiteController.java
 
 ```java
-package com.rick.site.module.site.controler;
+package com.rick.site.module.site.controller;
 
 import com.rick.common.component.starter.controller.BaseCodeApi;
 import com.rick.site.module.site.entity.Site;

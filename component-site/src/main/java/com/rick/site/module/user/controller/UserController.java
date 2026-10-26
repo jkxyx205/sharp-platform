@@ -1,4 +1,4 @@
-package com.rick.site.module.user.controler;
+package com.rick.site.module.user.controller;
 
 import com.rick.common.component.starter.controller.BaseApi;
 import com.rick.site.module.user.entity.User;

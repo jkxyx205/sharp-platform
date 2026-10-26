@@ -1,4 +1,4 @@
-package com.rick.site.module.demo.controler;
+package com.rick.site.module.demo.controller;
 
 import com.rick.api.platform.PlatformUserService;
 import com.rick.common.component.starter.controller.BaseCodeApi;

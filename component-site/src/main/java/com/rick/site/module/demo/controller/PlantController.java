@@ -1,4 +1,4 @@
-package com.rick.site.module.demo.controler;
+package com.rick.site.module.demo.controller;
 
 import com.rick.common.component.starter.controller.BaseCodeApi;
 import com.rick.common.http.exception.BizException;

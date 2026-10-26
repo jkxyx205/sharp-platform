@@ -63,7 +63,7 @@ description: 在 sharp-platform 业务模块（component-site / component-erp �
 ├── entity/XxxStatus.java    # 枚举字段（每个枚举一个文件，放 entity 包）
 ├── dao/XxxDAO.java
 ├── service/XxxService.java
-└── controler/XxxController.java   # ⚠️ 包名沿用目标模块既有拼写（site/erp 现为 controler）
+└── controller/XxxController.java   # ⚠️ 包名沿用目标模块既有拼写（site/erp 现为 controller）
 ```
 
 **硬约束**：实体必须落在 `**.entity` 结尾的包下（`sharp.database.entity-base-package: com.rick.{app}.**.entity` 扫描约定），否则 TableMeta 不识别。DAO/Service/Controller 靠 `@Repository`/`@Service`/`@RestController` 被启动类包扫描，无需任何注册。

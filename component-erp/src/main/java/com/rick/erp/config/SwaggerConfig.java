@@ -22,7 +22,7 @@ public class SwaggerConfig extends ComponentSwaggerConfig {
         return GroupedOpenApi.builder()
                 .displayName("Plant API")
                 .group("plant-api")                  // 分组名称
-                .packagesToScan("com.rick.erp.module.demo.controler") // 扫描包
+                .packagesToScan("com.rick.erp.module.demo.controller") // 扫描包
                 .pathsToMatch("/{groupId}/plants/**")         // 可选，按路径匹配
                 .build();
     }

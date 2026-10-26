@@ -1,4 +1,4 @@
-package com.rick.erp.module.demo.controler;
+package com.rick.erp.module.demo.controller;
 
 import com.rick.api.site.DemoService;
 import com.rick.common.component.starter.controller.BaseCodeApi;
