@@ -21,7 +21,7 @@ spring:
 logging:
   level:
     root: INFO
-    com.devyean.platform: DEBUG
+    com.rick.platform: DEBUG
     com.rick.db.repository: DEBUG
     org:
       springdoc: OFF

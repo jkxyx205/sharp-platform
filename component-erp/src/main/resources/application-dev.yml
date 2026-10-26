@@ -21,7 +21,7 @@ spring:
 logging:
   level:
     root: INFO
-    com.devyean.erp: DEBUG
+    com.rick.erp: DEBUG
     com.rick.db.repository: DEBUG
     org:
       springdoc: OFF
