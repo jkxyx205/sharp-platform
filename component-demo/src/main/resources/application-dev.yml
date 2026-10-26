@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: ${JDBC.URL}
+    username: ${JDBC.USERNAME}
+    password: ${JDBC.PASSWORD}
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        # Web 实例单独分组，与 Dubbo 注册的实例（DEFAULT_GROUP）隔离
+        group: WEB_GROUP
+  hikari:
+    # 2核：2 * 2 + 1 = 5，留余量设 10
+    maximum-pool-size: 10
+
+    minimum-idle: 2
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000
+
+logging:
+  level:
+    root: INFO
+    com.rick.demo: DEBUG
+    com.rick.db.repository: DEBUG
+    org:
+      springdoc: OFF
+
+  file:
+    path: /Users/rick/Space/tmp/demo/log
+
+fileupload:
+  tmp: /Users/rick/Space/tmp/demo/tmp # 下载的临时目录
+  local: # cd /Users/rick/Space/tmp/fileupload && http-server -p 7892
+    root-path: /Users/rick/Space/tmp/demo/files
+    server-url: http://127.0.0.1:7892/ # 映射到tmp目录
+
+dubbo:
+  registry:
+    address: nacos://127.0.0.1:8848
+    register-mode: instance
+  protocol:
+    port: 20883
+  application:
+    qos-port: 22224
+
+app:
+  domain: http://127.0.0.1:8080
+  version: v2026.04.16

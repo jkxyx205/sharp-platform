@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .pathMatchers("/auth/login", "/auth/mobile_login", "/auth/register", "/api/platform/auth/register",
                                 "/sms/{mobile}/register", "/sms/{mobile}/mobile_login", "/image/login",
                                 // 接口文档放行
+                                "/api/demo/swagger-ui.html", "/api/demo/swagger-ui/**", "/api/demo/v3/api-docs/**", "/api/demo/v3/api-docs/**",
                                 "/api/site/swagger-ui.html", "/api/site/swagger-ui/**", "/api/site/v3/api-docs/**", "/api/site/v3/api-docs/**",
                                 "/api/erp/swagger-ui.html", "/api/erp/swagger-ui/**", "/api/erp/v3/api-docs/**", "/api/erp/v3/api-docs/**",
                                 "/api/platform/swagger-ui.html", "/api/platform/swagger-ui/**", "/api/platform/v3/api-docs/**", "/api/platform/v3/api-docs/**").permitAll()

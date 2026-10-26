@@ -18,6 +18,12 @@ spring:
           # 带 /api/site 前缀的 swagger URL。仅信任本机回环地址，从其他机器访问需扩展正则
           trusted-proxies: '127\.0\.0\.1|0:0:0:0:0:0:0:1|::1'
           routes:
+            - id: demo
+              uri: lb://demo
+              predicates:
+                - Path=/api/demo/**
+              filters:
+                - StripPrefix=2
             - id: site
               uri: lb://site
               predicates:

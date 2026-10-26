@@ -1,0 +1,8 @@
+group = 'com.rick.demo'
+version = libs.versions.sharp.get()
+description = 'demo'
+
+dependencies {
+    implementation project(':component-starter')
+    implementation project(':component-api')
+}
