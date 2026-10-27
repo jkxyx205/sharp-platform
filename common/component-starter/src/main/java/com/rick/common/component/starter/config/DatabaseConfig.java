@@ -7,8 +7,10 @@ import com.rick.db.repository.JdbcTemplateCallback;
 import com.rick.db.repository.TableDAO;
 import com.rick.db.repository.model.EntityId;
 import com.rick.db.repository.support.InsertUpdateCallback;
+import com.rick.db.repository.support.SqlHelper;
 import com.rick.db.repository.support.baseinfo.ExtendInsertUpdateCallback;
 import com.rick.db.repository.support.baseinfo.ExtendTableDAOImpl;
+import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -59,25 +61,30 @@ public class DatabaseConfig {
             }
 
             @Override
+            public boolean exists(@NotBlank String sql, Map<String, Object> paramMap) {
+                return super.exists(this.addIsDeletedCondition(sql, () -> SqlHelper.hasWhereField(sql, "group_id") ? "" : "AND group_id = :group_id"), paramMap);
+            }
+
+            @Override
+            public boolean exists(String sql, Object... args) {
+                return super.exists(this.addIsDeletedCondition(sql, () -> SqlHelper.hasWhereField(sql, "group_id") ? "" : "AND group_id = ?"), args);
+            }
+
+            @Override
             public <E> List<E> select(Class<E> clazz, String sql, Object... args) {
-                return super.select(clazz, this.addIsDeletedCondition(sql, () -> "AND group_id = ?"), ArrayUtils.addAll(args, getGroupId()));
+                return super.select(clazz, this.addIsDeletedCondition(sql, () -> SqlHelper.hasWhereField(sql, "group_id") ? "" : "AND group_id = ?"), ArrayUtils.addAll(args, getGroupId()));
             }
 
             @Override
             public <E> List<E> select(String sql, Map<String, Object> paramMap, JdbcTemplateCallback<E> jdbcTemplateCallback) {
                 paramMap = new HashMap<>(paramMap);
                 paramMap.put("group_id", getGroupId());
-                return super.select(this.addIsDeletedCondition(sql, () -> "AND group_id = :group_id"), paramMap, jdbcTemplateCallback);
+                return super.select(this.addIsDeletedCondition(sql, () -> SqlHelper.hasWhereField(sql, "group_id") ? "" : "AND group_id = :group_id"), paramMap, jdbcTemplateCallback);
             }
 
             @Override
             public List<Map<String, Object>> select(String sql, Object... args) {
-                return super.select(this.addIsDeletedCondition(sql, () -> "AND group_id = ?"), ArrayUtils.addAll(args, getGroupId()));
-            }
-
-            @Override
-            public boolean exists(String sql, Object... args) {
-                return super.exists(this.addIsDeletedCondition(sql, () -> "AND group_id = ?"), args);
+                return super.select(this.addIsDeletedCondition(sql, () -> SqlHelper.hasWhereField(sql, "group_id") ? "" : "AND group_id = ?"), ArrayUtils.addAll(args, getGroupId()));
             }
         };
     }
