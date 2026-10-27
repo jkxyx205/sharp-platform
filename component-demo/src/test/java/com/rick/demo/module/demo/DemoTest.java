@@ -1,4 +1,4 @@
-package com.rick.demo.demo;
+package com.rick.demo.module.demo;
 
 import com.rick.demo.BaseTest;
 import com.rick.demo.module.demo.entity.Demo;
