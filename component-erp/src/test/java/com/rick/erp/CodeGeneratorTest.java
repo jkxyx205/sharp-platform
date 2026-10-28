@@ -1,6 +1,7 @@
 package com.rick.erp;
 
 import com.rick.db.repository.TableDAO;
+import com.rick.erp.module.core.group.entity.CodeDescription;
 import com.rick.erp.module.core.incoterm.entity.Incoterm;
 import com.rick.generator.Generator;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,17 @@ public class CodeGeneratorTest {
 
         generator.execute(Incoterm.class,
                 "/Users/rick/Space/Workspace/sharp-platform/component-erp/src/main/java/com/rick/erp/module/core/incoterm",
+                Map.of(
+                        Generator.CREATE_TABLE, false,
+                        Generator.PROJECT, "component-erp",
+                        Generator.REPORT, false
+                ));
+    }
+
+    @Test
+    public void testGeneratorGroupTable() throws IOException {
+        generator.execute(CodeDescription.class,
+                "/Users/rick/Space/Workspace/sharp-platform/component-erp/src/main/java/com/rick/erp/module/core/group",
                 Map.of(
                         Generator.CREATE_TABLE, false,
                         Generator.PROJECT, "component-erp",
