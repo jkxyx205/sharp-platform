@@ -81,17 +81,17 @@ public class IncotermTest extends BaseTest<IncotermService, Incoterm, Long>  {
         // 编辑 + 删除
         Incoterm zwork = Incoterm.builder()
                 .code("ZWORK")
-                .description("Edit 编辑")
+                .description("Edit 编辑222")
                 .locationRequired(true)
                 .build();
 
         Incoterm job = Incoterm.builder()
                 .code("ZJOB2")
-                .description("Insert 插入2")
+                .description("Insert 插入222")
                 .locationRequired(true)
                 .build();
 
-        codeIdFillService.fill(zwork);
+//        codeIdFillService.fill(zwork);
         baseService.saveOrUpdate(List.of(zwork, job));
 
     }
