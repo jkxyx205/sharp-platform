@@ -23,7 +23,7 @@ public class ErpHeaderEntityBaseCodeServiceImpl<D extends EntityCodeDAO<T, Long>
     }
 
     @Override
-    protected void beforeInsertOrUpdate(T entity) {
+    protected void beforeFieldsFill(T entity) {
         // 设置 headerCode
         for (ItemEntity itemEntity : entity.getItemList()) {
             itemEntity.setHeaderCode(entity.getCode());
@@ -38,7 +38,7 @@ public class ErpHeaderEntityBaseCodeServiceImpl<D extends EntityCodeDAO<T, Long>
                             serialNumber = SerialNumber.builder().code(itemSerialNumber.getSerialNumberCode()).build();
                             itemSerialNumber.setSerialNumber(serialNumber);
                         }
-                        serialNumber.setMaterialId(stockItemEntity.getStockLocation().getMaterialId());
+                        serialNumber.setMaterialId(stockItemEntity.getStockLocation().getMaterialId()); // 可能需要通过工具 fill id
                         serialNumber.setMaterialCode(stockItemEntity.getStockLocation().getMaterialCode());
                     }
                 }
