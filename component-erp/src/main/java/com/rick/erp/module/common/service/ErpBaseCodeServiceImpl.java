@@ -16,10 +16,10 @@ public class ErpBaseCodeServiceImpl<D extends EntityCodeDAO<T, ID>, T extends En
     @Transactional(rollbackFor = Exception.class)
     @Override
     public T insertOrUpdate(T entity) {
-        preprocess(entity);
-        codeGenerate(entity);
-        beforeFieldsFill(entity);
-//        entityFieldsFillService.fill(entity);
+        preProcess(entity); // 预处理
+//        entityFieldsFillService.fill(entity); // fill 字段 id
+        validate(entity); // 业务验证
+        codeGenerate(entity); // 生成 code
         beforeInsertOrUpdate(entity);
         entity = super.insertOrUpdate(entity);
         afterInsertOrUpdate(entity);
@@ -29,7 +29,14 @@ public class ErpBaseCodeServiceImpl<D extends EntityCodeDAO<T, ID>, T extends En
     /**
      * 钩子方法：数据预处理（如格式化、清洗）
      */
-    protected void preprocess(T entity) {
+    protected void preProcess(T entity) {
+    }
+
+    /**
+     * 钩子方法：业务验证
+     */
+    protected void validate(T entity) {
+
     }
 
     /**
@@ -38,13 +45,6 @@ public class ErpBaseCodeServiceImpl<D extends EntityCodeDAO<T, ID>, T extends En
      */
     protected void codeGenerate(T entity) {
 
-    }
-
-    /**
-     * 钩子方法：entityFieldsFillService.fill 之前执行
-     * @param entity
-     */
-    protected void beforeFieldsFill(T entity) {
     }
 
     /**

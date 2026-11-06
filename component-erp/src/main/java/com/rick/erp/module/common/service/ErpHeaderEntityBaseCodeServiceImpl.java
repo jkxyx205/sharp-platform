@@ -23,11 +23,8 @@ public class ErpHeaderEntityBaseCodeServiceImpl<D extends EntityCodeDAO<T, Long>
     }
 
     @Override
-    protected void beforeFieldsFill(T entity) {
-        // 设置 headerCode
+    protected void preProcess(T entity) {
         for (ItemEntity itemEntity : entity.getItemList()) {
-            itemEntity.setHeaderCode(entity.getCode());
-
             // 如果是序列号，则设置 Item Code / SerialNumber / Material Info
             if (itemEntity instanceof StockItemEntity stockItemEntity) {
                 if (CollectionUtils.isNotEmpty(stockItemEntity.getStockLocation().getItemSerialNumberList())) {
@@ -45,5 +42,13 @@ public class ErpHeaderEntityBaseCodeServiceImpl<D extends EntityCodeDAO<T, Long>
             }
         }
 
+    }
+
+    @Override
+    protected void beforeInsertOrUpdate(T entity) {
+        // 设置 headerCode
+        for (ItemEntity itemEntity : entity.getItemList()) {
+            itemEntity.setHeaderCode(entity.getCode());
+        }
     }
 }
